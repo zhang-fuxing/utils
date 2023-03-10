@@ -1,17 +1,10 @@
-package cn.com.kingshine.geologic.util;
-
-import cn.hutool.core.convert.Convert;
-import org.springframework.lang.NonNull;
+package org.tools.option;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author zhangfx
- * @date 2022/7/28
- */
 public class NumberUtil {
 	
 	public static Double valueOf(Double t) {
@@ -83,13 +76,13 @@ public class NumberUtil {
 		BigDecimal decimal = new BigDecimal(value);
 		
 		
-		if (isInteget && (isShort1 || isLong1 || isInteget1)) {
+		if (isInteget && (isShort1 || isLong1)) {
 			result = (T) (Integer) decimal.intValue();
-		} else if (isLong && (isInteget1 || isLong1)) {
+		} else if (isLong && isInteget1) {
 			result = (T) (Long) decimal.longValue();
-		} else if (isFloat && (isFloat1 || isDouble1)) {
+		} else if (isFloat && isDouble1) {
 			result = (T) (Float) decimal.floatValue();
-		} else if (isDouble && (isDouble1 || isFloat1 || isLong1)) {
+		} else if (isDouble && (isFloat1 || isLong1)) {
 			BigDecimal scale = decimal.setScale(2, RoundingMode.HALF_UP);
 			result = (T) (Double) scale.doubleValue();
 		}
@@ -107,15 +100,14 @@ public class NumberUtil {
 	 * @return 如果能进行转换，则返回目标对象类型，否则返回源类型source
 	 * @throws Exception 类型转换错误时
 	 */
-	public static <T> T convert(@NonNull Class<? extends Number> target, Object source) throws Exception {
+	public static <T> T convert(Class<? extends Number> target, Object source) throws Exception {
 		if (source instanceof BigDecimal ts) {
 			return convert(target, ts);
 		}
 		return convert(target.getSimpleName(), source);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static <T> T convert(@NonNull Class<? extends Number> target, BigDecimal source) {
+	public static <T> T convert(Class<? extends Number> target, BigDecimal source) {
 		String simpleName = target.getSimpleName();
 		return convert(simpleName, source);
 	}
@@ -160,24 +152,29 @@ public class NumberUtil {
 	/**
 	 * 传入的数字大于0
 	 *
-	 * @param number
-	 * @param <T>
-	 * @return
+	 * @param number num
+	 * @param <T> t
+	 * @return bool
 	 */
 	public static <T extends Number> boolean isPositive(T number) {
 		if (number == null) return false;
 		String s = number.toString();
-		double num = Convert.toDouble(s, 0.0);
+		double num;
+		try {
+			num = Double.parseDouble(s);
+		} catch (NumberFormatException e) {
+			num = 0;
+		}
 		return num > 0.0;
 	}
 	
-	public static Float subNum(@NonNull Float f, int num) {
+	public static Float subNum(Float f, int num) {
 		if (f == null) return 0f;
 		BigDecimal bigDecimal = new BigDecimal(f.toString());
 		return bigDecimal.setScale(num, RoundingMode.HALF_UP).floatValue();
 	}
 	
-	public static Double subNum(@NonNull Double f, int num) {
+	public static Double subNum(Double f, int num) {
 		if (f == null) return (double) 0;
 		BigDecimal bigDecimal = new BigDecimal(f.toString());
 		return bigDecimal.setScale(num, RoundingMode.HALF_UP).doubleValue();

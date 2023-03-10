@@ -10,11 +10,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-/**
- * @author zhouhao
- * @brief 数据库使用的10位时间戳与日期字符串转换工具类
- * @date 2021-04-08
- */
 public class DateUtil {
 	/**
 	 * 时间戳转换成日期格式字符串
@@ -58,7 +53,6 @@ public class DateUtil {
 	/**
 	 * @param beginDate 起始日期
 	 * @param limitDay  时限天数
-	 * @brief 获取指定时限对应的日期, 输入输出都是Date
 	 */
 	public static Date getLimitDate(Date beginDate, int limitDay) {
 		if (null == beginDate) {
@@ -89,12 +83,12 @@ public class DateUtil {
 		return LocalDate.parse(str, DateTimeFormatter.ofPattern(pattern));
 	}
 	
-	public static LocalDateTime parseT(String str, String pattern) {
+	public static LocalDateTime parseToLocalDateTime(String str, String pattern) {
 		return LocalDateTime.parse(str, DateTimeFormatter.ofPattern(pattern));
 	}
 	
-	public static LocalDateTime parseT(String str) {
-		return parseT(str, "yyyy-MM-dd hh:mm:ss SSS");
+	public static LocalDateTime parseToLocalDateTime(String str) {
+		return parseToLocalDateTime(str, "yyyy-MM-dd hh:mm:ss SSS");
 	}
 	
 	
