@@ -1,8 +1,6 @@
 package org.tools.option;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class OptionUtil {
@@ -100,22 +98,12 @@ public class OptionUtil {
 		return result;
 	}
 	
-	public static long getAllPage(long count, long pageSize) {
+	public static long allPage(long count, long pageSize) {
 		long page = count / pageSize;
 		long rd = count % pageSize;
 		return rd == 0 ? page : page + 1;
 	}
 	
-	public static void writeFile(String filePath, HttpServletResponse response) throws IOException {
-		File file = new File(filePath);
-		if (!file.exists()) return;
-		response.setContentType("application/octet-stream;");
-		// 避免下载文件名出现不显示汉字问题
-		response.setHeader("Content-Disposition", "attachment; filename=" +
-				new String(file.getName().getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
-		response.setHeader("Content-Length", String.valueOf(file.length()));
-		writeFile(file, response.getOutputStream());
-	}
 	public static void writeFile(String filePath, OutputStream outputStream) throws IOException {
 		File file = new File(filePath);
 		if (!file.exists()) throw new FileNotFoundException("不存在文件： %s，请确保该文件存在。 ".formatted(filePath));
@@ -133,7 +121,6 @@ public class OptionUtil {
 			bos.flush();
 		}
 	}
-
 }
 
 

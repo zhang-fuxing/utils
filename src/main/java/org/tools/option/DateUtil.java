@@ -72,7 +72,7 @@ public class DateUtil {
 		if (date == null)
 			return "";
 		SimpleDateFormat sdf;
-		if (Str_Util.isEmpty(pattern))
+		if (StringUtil.isEmpty(pattern))
 			sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		else
 			sdf = new SimpleDateFormat(pattern);
