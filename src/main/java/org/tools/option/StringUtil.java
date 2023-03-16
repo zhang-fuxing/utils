@@ -1,7 +1,6 @@
 package org.tools.option;
 
 import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,8 +99,7 @@ public class StringUtil {
 	static final char[] d = "0123456789ABCDEF".toCharArray();
 	
 	public static String toMD5(String str, Charset charset, boolean isUpperCase) throws NoSuchAlgorithmException {
-		MessageDigest digest = MessageDigest.getInstance("MD5");
-		byte[] bytes = digest.digest(str.getBytes(charset));
+		byte[] bytes = MD5Util.getMd5Bytes(str.getBytes(charset));
 		char[] chars = encode(bytes, isUpperCase);
 		return String.valueOf(chars);
 	}
