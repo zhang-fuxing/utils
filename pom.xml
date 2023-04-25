@@ -4,10 +4,10 @@
 
     <groupId>com.zhangfuxing.tools</groupId>
     <artifactId>simple-utils</artifactId>
-    <version>1.1</version>
+    <version>1.4.2</version>
     <packaging>jar</packaging>
 
-    <name>utils</name>
+    <name>simple-utils</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

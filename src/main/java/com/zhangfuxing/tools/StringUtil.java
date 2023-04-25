@@ -1,5 +1,9 @@
 package com.zhangfuxing.tools;
 
+import com.zhangfuxing.tools.enums.JoinStr;
+import com.zhangfuxing.tools.exception.IllegalFieldException;
+import com.zhangfuxing.tools.exception.StringJoinModelException;
+
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -11,6 +15,9 @@ import java.util.stream.Collectors;
 
 public class StringUtil {
 	public static final int INDEX_NOT_FOUND = -1;
+	public static final int BUFFER = 1;
+	public static final int BUILDER = 2;
+	
 	
 	public static boolean isEmpty(String s) {
 		return s == null || s.isEmpty();
@@ -29,6 +36,10 @@ public class StringUtil {
 		Pattern r = Pattern.compile(pattern);
 		Matcher m = r.matcher(str);
 		return m.matches();
+	}
+	
+	public static void isField(String str) {
+		if (fieldCheck(str)) throw new IllegalFieldException("不能保护特殊字符");
 	}
 	
 	public static boolean isBlank(final CharSequence cs) {
@@ -98,11 +109,64 @@ public class StringUtil {
 	static final char[] s = "0123456789abcdef".toCharArray();
 	static final char[] d = "0123456789ABCDEF".toCharArray();
 	
+	public static StringBuilder appendBuilder(JoinStr joinStr, String... args) {
+		var builder = new StringBuilder();
+		if (args == null) {
+			return builder;
+		}
+		for (int i = 0; i < args.length; i++) {
+			String arg = args[i];
+			builder.append(arg);
+			if (joinStr != null && i != args.length - 1) {
+				builder.append(joinStr.getCharacter());
+			}
+		}
+		return builder;
+	}
+	
+	public static StringBuffer appendBuffer(JoinStr joinStr, String... args) {
+		var builder = new StringBuffer();
+		if (args == null) {
+			return builder;
+		}
+		for (int i = 0; i < args.length; i++) {
+			String arg = args[i];
+			builder.append(arg);
+			if (joinStr != null && i != args.length - 1) {
+				builder.append(joinStr.getCharacter());
+			}
+		}
+		return builder;
+	}
+	
+	public static String join(int model, JoinStr joinStr, String... args) {
+		if (BUFFER == model) return appendBuffer(joinStr, args).toString();
+		if (BUILDER == model) return appendBuilder(joinStr, args).toString();
+		throw new StringJoinModelException("未知的字符串连接模式");
+	}
+	
+	public static String getClassPath() {
+		return Thread.currentThread().getContextClassLoader().getResource("").getPath();
+	}
+	
+	public static String join(int model, String... args) {
+		return join(model, null, args);
+	}
+	
+	public static String join(JoinStr joinStr, String... args) {
+		return join(BUILDER, joinStr, args);
+	}
+	
+	public static String join(String... args) {
+		return join(BUILDER, null, args);
+	}
+	
 	public static String toMD5(String str, Charset charset, boolean isUpperCase) throws NoSuchAlgorithmException {
 		byte[] bytes = MD5Util.getMd5Bytes(str.getBytes(charset));
 		char[] chars = encode(bytes, isUpperCase);
 		return String.valueOf(chars);
 	}
+	
 	public static String toMD5(String str, Charset charset) throws NoSuchAlgorithmException {
 		return toMD5(str, charset, true);
 	}
