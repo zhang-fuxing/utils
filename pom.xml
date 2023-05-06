@@ -4,7 +4,7 @@
 
     <groupId>com.zhangfuxing.tools</groupId>
     <artifactId>simple-utils</artifactId>
-    <version>1.4.2</version>
+    <version>1.4.4</version>
     <packaging>jar</packaging>
 
     <name>simple-utils</name>

@@ -162,4 +162,13 @@ public class DateUtil {
 	public static Date getDateOffset(Date date) {
 		return getDateOffset(date, 3600);
 	}
+	
+	/**
+	 * 获取年度号
+	 *
+	 * @return 年度
+	 */
+	public static Integer year() {
+		return LocalDate.now().getYear();
+	}
 }

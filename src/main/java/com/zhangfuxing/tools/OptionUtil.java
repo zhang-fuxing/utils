@@ -1,5 +1,7 @@
 package com.zhangfuxing.tools;
 
+import com.zhangfuxing.tools.record.Page;
+
 import java.io.*;
 import java.util.*;
 
@@ -120,6 +122,33 @@ public class OptionUtil {
 			}
 			bos.flush();
 		}
+	}
+	
+	
+	public static <T> List<T> subList(List<T> list, Page page) {
+		return OptionUtil.subList(list, page.index(), page.pageSize());
+	}
+	
+	public static <T> List<T> subList(List<T> list, int pageNo, int pageSize) {
+		list = Optional.ofNullable(list).orElse(new ArrayList<>());
+		int size = list.size();
+		double totalPage = Math.ceil(size / (pageSize * 1.0));
+		
+		if (totalPage < pageNo) {
+			return new ArrayList<>();
+		}
+		
+		if (size <= pageSize) {
+			return list;
+		}
+		
+		int start = (pageNo - 1) * pageSize;
+		int end = start + pageSize;
+		
+		if (end > size) {
+			end = size;
+		}
+		return list.subList(start, end);
 	}
 }
 

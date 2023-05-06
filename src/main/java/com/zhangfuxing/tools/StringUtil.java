@@ -38,8 +38,8 @@ public class StringUtil {
 		return m.matches();
 	}
 	
-	public static void isField(String str) {
-		if (fieldCheck(str)) throw new IllegalFieldException("不能保护特殊字符");
+	public static void isIllegalField(String str) {
+		if (!fieldCheck(str)) throw new IllegalFieldException("不能包含特殊字符");
 	}
 	
 	public static boolean isBlank(final CharSequence cs) {
