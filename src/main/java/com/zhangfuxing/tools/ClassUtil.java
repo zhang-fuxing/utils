@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
  * @date 2023/4/11
  */
 public class ClassUtil {
+	@SuppressWarnings("unchecked")
 	public static <T> Class<T> getClass(T obj) {
 		return ((null == obj) ? null : (Class<T>) obj.getClass());
 	}
@@ -28,5 +29,12 @@ public class ClassUtil {
 	
 	public static <T> T getInstance(Class<T> clazz) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
 		return clazz.getConstructor().newInstance();
+	}
+	
+	public static Short toShort(Integer source, Short def) {
+		if (source == null) {
+			return def;
+		}
+		return source.shortValue();
 	}
 }

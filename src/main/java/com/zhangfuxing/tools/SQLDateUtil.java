@@ -18,4 +18,8 @@ public class SQLDateUtil {
 	public static Timestamp time() {
 		return new Timestamp(System.currentTimeMillis());
 	}
+	
+	public static Timestamp convert(java.util.Date date) {
+		return new Timestamp(date.getTime());
+	}
 }
