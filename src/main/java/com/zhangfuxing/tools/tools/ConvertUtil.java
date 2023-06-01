@@ -1,7 +1,7 @@
-package com.zhangfuxing.tools;
+package com.zhangfuxing.tools.tools;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import com.zhangfuxing.tools.StringUtil;
+
 import java.util.function.Function;
 
 /**
@@ -25,7 +25,7 @@ public class ConvertUtil {
 	public static Short toShort(String source) {
 		Short convert = null;
 		try {
-			convert = convert(source, t -> StringUtil.isBlank(source) ? null : Short.parseShort(t));
+			convert = convert(source, t -> com.zhangfuxing.tools.StringUtil.isBlank(source) ? null : Short.parseShort(t));
 		} catch (Exception ignored) {}
 		return convert;
 	}
@@ -52,7 +52,7 @@ public class ConvertUtil {
 	public static Integer toInt(String source) {
 		Integer convert = null;
 		try {
-			convert = convert(source, t -> StringUtil.isBlank(source) ? null : Integer.parseInt(t));
+			convert = convert(source, t -> com.zhangfuxing.tools.StringUtil.isBlank(source) ? null : Integer.parseInt(t));
 		} catch (Exception ignored) {}
 		return convert;
 	}
@@ -76,10 +76,5 @@ public class ConvertUtil {
 			convert = convert(source, t -> StringUtil.isBlank(source) ? null : Long.parseLong(t));
 		} catch (Exception ignored) {}
 		return convert;
-	}
-
-	public static String formatToStr(Number number, int c) {
-		if (number == null) return "0";
-		return new BigDecimal(number.toString()).setScale(c, RoundingMode.HALF_UP).toString();
 	}
 }

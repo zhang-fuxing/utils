@@ -1,6 +1,6 @@
 package com.zhangfuxing.tools.test;
 
-import java.io.FileNotFoundException;
+import com.zhangfuxing.tools.StringUtil;
 
 /**
  * @author 张福兴
@@ -9,7 +9,9 @@ import java.io.FileNotFoundException;
  * @email zhangfuxing1010@163.com
  */
 public class Base64Test {
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) {
+		String format = StringUtil.format("{path}/{projectId}", "/usr/project/doc", 1,"aaa");
+		System.out.println(format);
 	}
 	
 }

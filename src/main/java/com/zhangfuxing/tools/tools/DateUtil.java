@@ -1,4 +1,6 @@
-package com.zhangfuxing.tools;
+package com.zhangfuxing.tools.tools;
+
+import com.zhangfuxing.tools.StringUtil;
 
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -66,14 +68,6 @@ public class DateUtil {
 	
 	public static String format(Date date) {
 		return format(date, "yyyy-MM-dd HH:mm:ss SSS");
-	}
-	
-	public static String format(long timestamp, String patter) {
-		return format(new Date(timestamp), patter);
-	}
-	
-	public static String format(long timestamp) {
-		return format(new Date(timestamp));
 	}
 	
 	public static String format(Date date, String pattern) {
