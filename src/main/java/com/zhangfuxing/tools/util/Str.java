@@ -230,8 +230,7 @@ public class Str {
                         } else {
                             throw new IllegalArgumentException("参数索引超出范围: " + argIndexTemp);
                         }
-                    } catch (NumberFormatException e) {
-//                        throw new IllegalArgumentException("字符串格式不正确，索引不是有效的数字: " + indexStr);
+                    } catch (NumberFormatException ignored) {
                     }
                 }
                 sb.replace(index, endIndex + 1, argStr);
@@ -239,7 +238,10 @@ public class Str {
             }
             index++;
         }
-        return sb.toString();
+
+        String result = sb.toString();
+        result = result.replace("\\{", "{");
+        return result;
     }
 
     public static void println(String str, Object... args) {
@@ -325,8 +327,8 @@ public class Str {
                 .map(o -> {
                     if (o instanceof Str val) {
                         return val.get();
-                    } else if (o instanceof String) {
-                        return "'" + o + "'";
+                    } else if (o instanceof String temp) {
+                        return "'" + temp + "'";
                     } else {
                         return o;
                     }
@@ -386,6 +388,7 @@ public class Str {
     public static String convertSeparator(String path) {
         return replace(path, "\\", "/");
     }
+
     public static boolean endWith(String str, String suffix, boolean ignoreCase, boolean ignoreEquals) {
         if (null == str || null == suffix) {
             if (ignoreEquals) {
@@ -411,6 +414,7 @@ public class Str {
     public static boolean startWith(String str, String suffix) {
         return startWith(str, suffix, false, false);
     }
+
     public static boolean startWith(String str, String prefix, boolean ignoreCase, boolean ignoreEquals) {
         if (null == str || null == prefix) {
             if (ignoreEquals) {
