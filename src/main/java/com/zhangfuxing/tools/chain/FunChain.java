@@ -2,8 +2,8 @@ package com.zhangfuxing.tools.chain;
 
 
 import com.zhangfuxing.tools.common.exception.FlowChainException;
-import com.zhangfuxing.tools.common.fun.IFunction;
 
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -122,14 +122,14 @@ public class FunChain<T> {
         return this;
     }
 
-    public <R> FunChain<R> importChainOrg(FunChain<T> chain, IFunction<FunChain<T>, R> then) {
+    public <R> FunChain<R> importChainOrg(FunChain<T> chain, BiFunction<FunChain<T>, FunChain<T>, R> then) {
         if (chain.throwable != null) {
             return new FunChain<>(chain.throwable);
         }
         return new FunChain<>(then.apply(chain, this));
     }
 
-    public <R> FunChain<R> importChain(FunChain<T> chain, IFunction<T, R> then) {
+    public <R> FunChain<R> importChain(FunChain<T> chain, BiFunction<T, T, R> then) {
         if (chain.throwable != null) {
             return new FunChain<>(chain.throwable);
         }

@@ -29,6 +29,10 @@ public class Str {
         this.value = format(value, args);
     }
 
+    public String instanceFmt(Object... args) {
+        return format(this.value, args);
+    }
+
     public static boolean isEmpty(String s) {
         return s == null || s.isEmpty();
     }
@@ -320,23 +324,6 @@ public class Str {
         return new Str(str, args).value;
     }
 
-    public static String fmtSqlVal(String str, Object... args) {
-        Object[] array = Optional.ofNullable(args)
-                .stream()
-                .flatMap(Arrays::stream)
-                .map(o -> {
-                    if (o instanceof Str val) {
-                        return val.get();
-                    } else if (o instanceof String temp) {
-                        return "'" + temp + "'";
-                    } else {
-                        return o;
-                    }
-                })
-                .toArray();
-        return format(str, array);
-    }
-
     public static String fmt(CharSequence template, Map<?, ?> map, boolean ignoreNull) {
         return format(valueOf(template), map, ignoreNull);
     }
@@ -544,4 +531,28 @@ public class Str {
     public static byte[] utf8Bytes(String str) {
         return new Str(str).getUTF8Bytes();
     }
+
+    public static byte[] hexToByte(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
+    public static String byteToHex(Byte[] byteArray) {
+        StringBuilder result = new StringBuilder("0x");
+        for (byte b : byteArray) {
+            result.append(String.format("%02X", b & 0xFF));
+        }
+        return result.toString();
+    }
+    public static String byteToHex(byte[] byteArray) {
+        StringBuilder result = new StringBuilder("0x");
+        for (byte b : byteArray) {
+            result.append(String.format("%02X", b & 0xFF));
+        }
+        return result.toString();
+    }
+
 }
