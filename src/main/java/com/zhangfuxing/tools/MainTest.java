@@ -1,6 +1,5 @@
 package com.zhangfuxing.tools;
 
-import com.zhangfuxing.tools.spring.aop.IService;
 import com.zhangfuxing.tools.spring.ioc.Spring;
 import com.zhangfuxing.tools.spring.ioc.Springs;
 
@@ -15,8 +14,6 @@ public class MainTest {
 
     public static void main(String[] args)  {
         var context = Springs.start(MainTest.class, args);
-        IService bean = context.getBean(IService.class);
-        bean.doSomething();
 
     }
 

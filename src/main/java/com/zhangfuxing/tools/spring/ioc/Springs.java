@@ -3,10 +3,11 @@ package com.zhangfuxing.tools.spring.ioc;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.metrics.ApplicationStartup;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  * @author 张福兴
@@ -20,6 +21,7 @@ public class Springs {
     private Class<?>[] applicationListener;
     private String[] args;
     private static ConfigurableApplicationContext context;
+    private static ApplicationListener<?>[] applicationListenerInstance;
 
     public static Springs begin() {
         return new Springs();
@@ -47,14 +49,18 @@ public class Springs {
         return loadcontext(mainClass, applicationListener, args);
     }
 
-    public static ConfigurableApplicationContext start(Class<?> mainClass, String... args) {
-        return start(mainClass, null, args);
+    public static ConfigurableApplicationContext start(Class<?> mainClass, String[] args) {
+        return loadcontext(mainClass, null, args);
     }
 
-    public static ConfigurableApplicationContext start(Class<?> mainClass, Class<?>[] applicationListener, String[] args) {
+    public static ConfigurableApplicationContext start(Class<?> mainClass, String[] args, Class<?>... applicationListener) {
         return loadcontext(mainClass, applicationListener, args);
     }
 
+    public static ConfigurableApplicationContext start(Class<?> mainClass, String[] args,ApplicationListener<?>... applicationListener) {
+        Springs.applicationListenerInstance = applicationListener;
+        return loadcontext(mainClass, null, args);
+    }
 
     public static ConfigurableApplicationContext load(Class<?> classes) {
         return new AnnotationConfigApplicationContext(classes);
@@ -92,9 +98,9 @@ public class Springs {
     private static void addApplicationListener(Class<?>[] applicationListener, AnnotationConfigApplicationContext context) {
         try {
             // 读取类路径下META-INF/spring.listener文件
-            ClassPathResource resource = new ClassPathResource(listenerPath);
-            if (resource.exists()) {
-                try (var br = new BufferedReader(new FileReader(resource.getFile()))) {
+            InputStream resourceAsStream = Springs.class.getClassLoader().getResourceAsStream(listenerPath);
+            if (resourceAsStream != null) {
+                try (var br = new BufferedReader(new InputStreamReader(resourceAsStream))) {
                     String line;
                     while ((line = br.readLine()) != null) {
                         line = line.trim();
@@ -117,6 +123,11 @@ public class Springs {
                     if (o instanceof ApplicationListener<?> listener) {
                         context.addApplicationListener(listener);
                     }
+                }
+            }
+            if (Springs.applicationListenerInstance != null) {
+                for (ApplicationListener<?> listener : Springs.applicationListenerInstance) {
+                    context.addApplicationListener(listener);
                 }
             }
         } catch (Exception e) {
