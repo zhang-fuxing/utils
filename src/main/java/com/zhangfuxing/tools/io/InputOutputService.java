@@ -1,5 +1,7 @@
 package com.zhangfuxing.tools.io;
 
+import org.springframework.stereotype.Component;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;

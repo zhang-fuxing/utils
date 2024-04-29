@@ -1,8 +1,8 @@
 package com.zhangfuxing.tools;
 
-import com.zhangfuxing.tools.sql.CondMode;
-import com.zhangfuxing.tools.sql.Order;
-import com.zhangfuxing.tools.sql.SqlUtil;
+import com.zhangfuxing.tools.spring.aop.IService;
+import com.zhangfuxing.tools.spring.ioc.Spring;
+import com.zhangfuxing.tools.spring.ioc.Springs;
 
 /**
  * @author 张福兴
@@ -10,16 +10,14 @@ import com.zhangfuxing.tools.sql.SqlUtil;
  * @date 2024/4/25
  * @email zhangfuxing1010@163.com
  */
+@Spring
 public class MainTest {
 
-    public static void main(String[] args) {
-        var values = SqlUtil.select()
-                .columns("UserID", "UserName", "Password", "IsInvalid")
-                .form("UserInfo")
-                .where("UserName", CondMode.LIKE, "z")
-                .orderBy(Order.ofAsc("1"))
-                .build();
-        System.out.println(values);
+    public static void main(String[] args)  {
+        var context = Springs.start(MainTest.class, args);
+        IService bean = context.getBean(IService.class);
+        bean.doSomething();
+
     }
 
 }
