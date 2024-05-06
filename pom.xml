@@ -37,12 +37,12 @@
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
-        <!--<dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib</artifactId>
-            <version>3.3.0</version>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.14.14</version>
             <scope>compile</scope>
             <optional>true</optional>
-        </dependency>-->
+        </dependency>
     </dependencies>
 </project>

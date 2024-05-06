@@ -3,7 +3,6 @@ package com.zhangfuxing.tools.spring.ioc;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.core.metrics.ApplicationStartup;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -62,13 +61,6 @@ public class Springs {
         return loadcontext(mainClass, null, args);
     }
 
-    public static ConfigurableApplicationContext load(Class<?> classes) {
-        return new AnnotationConfigApplicationContext(classes);
-    }
-
-    public static ConfigurableApplicationContext load(String... basePackages) {
-        return new AnnotationConfigApplicationContext(basePackages);
-    }
 
     private static ConfigurableApplicationContext loadcontext(Class<?> mainClass, Class<?>[] applicationListener, String[] args) {
         var context = new AnnotationConfigApplicationContext();

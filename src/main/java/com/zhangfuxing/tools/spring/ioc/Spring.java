@@ -2,7 +2,6 @@ package com.zhangfuxing.tools.spring.ioc;
 
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 import java.lang.annotation.*;
 
@@ -18,7 +17,6 @@ import java.lang.annotation.*;
 @Configuration
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-@EnableAspectJAutoProxy
 public @interface Spring {
     Class<?>[] value() default {};
     String[] scanPackages() default {};
