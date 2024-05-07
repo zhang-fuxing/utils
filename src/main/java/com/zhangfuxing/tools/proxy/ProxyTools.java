@@ -47,9 +47,8 @@ public class ProxyTools {
                 toInvocationHandler(target, handler));
     }
 
-
-    public static <T> T newProxyInstance(Class<T> subclass, T instance, ElementMatcher<? super MethodDescription> matcher, ProxyInvocationHandler handler) {
-        return newProxyInstance(ProxyTools.version, subclass, matcher, toInvocationHandler(instance, handler));
+    public static <T> T newProxyInstance(T instance, ElementMatcher<? super MethodDescription> matcher, ProxyInvocationHandler handler) {
+        return (T) newProxyInstance(ProxyTools.version, instance.getClass(), matcher, toInvocationHandler(instance, handler));
     }
 
     public static <T> T newProxyInstance(ClassFileVersion version, Class<T> subclass,
