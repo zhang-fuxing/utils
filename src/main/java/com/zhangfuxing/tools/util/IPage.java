@@ -42,7 +42,7 @@ public class IPage<T> {
 		this.data = data;
 		this.totalCount = totalCount;
 		this.index = index;
-		this.pageCount = Math.toIntExact(OptionUtil.allPage(totalCount, pageSize));
+		this.pageCount = (totalCount + pageSize - 1) / pageSize;
 	}
 	
 	public Integer getIndex() {
