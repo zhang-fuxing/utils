@@ -1,8 +1,6 @@
 package com.zhangfuxing.tools.util;
 
-import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
@@ -183,17 +181,6 @@ public class NumberUtil {
     }
 
 
-    public static synchronized void set(Double target, Double value) {
-        try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            Unsafe unsafe = (Unsafe) field.get(null);
-            long valueOffset = unsafe.objectFieldOffset(Double.class.getDeclaredField("value"));
-            unsafe.putDouble(target, valueOffset, value);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public static Double scale(Double value, int c) {
         if (value == null) return null;
