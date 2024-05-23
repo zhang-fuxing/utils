@@ -7,6 +7,28 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
+ * 可链式注册一个匹配器和代码片段，注册完成后可传入一个参数，用于配配器进行匹配，如果能成功匹配，则执行对应的代码片段，返回一个类型
+ * <p>
+ * 类似于 if-else 的效果，也可以执行所有匹配项
+ * exp:
+ * <p>
+ * ChainHandlerRegister.<String, Void>newInstance() <br/>
+ * .register("A", input -> {
+ * System.out.println(input); // A
+ * return null;
+ * })<br/>
+ * .register("B", input -> {
+ * System.out.println(input);// B
+ * return null;
+ * }) <br/>
+ * .register(input -> input.equals("C"), input -> {
+ * System.out.println(input);// C
+ * return null;
+ * }) <br/>
+ * .doFirstMatching("C");
+ *
+ * @param <T> 输入类型
+ * @param <R> 输出类型
  * @author 张福兴
  * @version 1.0
  * @date 2024/5/8

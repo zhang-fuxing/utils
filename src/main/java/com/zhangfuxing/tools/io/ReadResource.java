@@ -1,5 +1,7 @@
 package com.zhangfuxing.tools.io;
 
+import org.springframework.stereotype.Component;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.util.Optional;
@@ -12,6 +14,7 @@ import java.util.function.Consumer;
  * @version 1.0
  * @date 2024-05-07 17:22:26
  */
+@Component
 public class ReadResource {
     private boolean readClasspath = true;
     private String filepath;
@@ -67,7 +70,7 @@ public class ReadResource {
     }
 
     /**
-     * 设置资源文件路径
+     * 设置资源文件路径,重新设置文件路径后需要调用 reloadStream 重新加载资源
      *
      * @param filepath 资源文件路径
      * @return 读取资源对象
