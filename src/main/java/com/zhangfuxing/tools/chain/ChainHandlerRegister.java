@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * 可链式注册一个匹配器和代码片段，注册完成后可传入一个参数，用于配配器进行匹配，如果能成功匹配，则执行对应的代码片段，返回一个类型
@@ -100,14 +101,11 @@ public class ChainHandlerRegister<T, R> {
      * @return 输出对象
      */
     public R doFirstMatching(T source) {
-        R result = null;
-        for (var chainHandler : chainHandlers) {
-            if (chainHandler.matcher(source)) {
-                result = chainHandler.handle(source);
-                break;
-            }
-        }
-        return result;
+        return chainHandlers.stream()
+                .filter(chainHandler -> chainHandler.matcher(source))
+                .findFirst()
+                .map(chainHandler -> chainHandler.handle(source))
+                .orElse(null);
     }
 
     /**
@@ -117,14 +115,16 @@ public class ChainHandlerRegister<T, R> {
      * @return 输出对象列表
      */
     public List<R> doAllMatching(T source) {
-        List<R> results = new ArrayList<>();
-        for (var chainHandler : chainHandlers) {
-            if (chainHandler.matcher(source)) {
-                R result = chainHandler.handle(source);
-                results.add(result);
-            }
-        }
-        return results;
+        return chainHandlers.stream()
+                .filter(chainHandler -> chainHandler.matcher(source))
+                .map(chainHandler -> chainHandler.handle(source))
+                .collect(Collectors.toList());
+    }
+
+    public void runAllMatching(T source) {
+        chainHandlers.stream()
+                .filter(chainHandler -> chainHandler.matcher(source))
+                .forEachOrdered(chainHandler -> chainHandler.handle(source));
     }
 
 }

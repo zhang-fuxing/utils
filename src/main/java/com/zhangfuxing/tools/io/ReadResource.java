@@ -14,7 +14,6 @@ import java.util.function.Consumer;
  * @version 1.0
  * @date 2024-05-07 17:22:26
  */
-@Component
 public class ReadResource {
     private boolean readClasspath = true;
     private String filepath;

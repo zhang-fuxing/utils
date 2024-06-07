@@ -1,9 +1,6 @@
 package com.zhangfuxing.tools;
 
-import com.zhangfuxing.tools.io.ReadResource;
 import com.zhangfuxing.tools.spring.ioc.Spring;
-import com.zhangfuxing.tools.spring.ioc.SpringLoader;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * @author 张福兴
@@ -14,21 +11,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Spring
 public class MainClass {
 
-    @Autowired
-    ReadResource readResource;
+    public static void main(String[] args) {
 
-    public static void main(String[] args) throws Exception {
-        var context = SpringLoader.load(MainClass.class, args);
-        context.getBean(MainClass.class)
-                .test();
+
     }
 
-    public void test() {
-        String s = readResource.resetFilePath("H:/proxy.txt")
-                .readByClasspath(false)
-                .reloadStream()
-                .readText();
-        System.out.println(s);
+
+    public static double[] buildPolygonVertices(double centerX, double centerY, double radius, int n) {
+        if (n < 3) {
+            throw new IllegalArgumentException("n must be greater than 3");
+        }
+
+        double[] vertices = new double[2 * n]; // 每个顶点有x和y两个坐标，所以总共2n个double值
+
+        double angleIncrement = 2 * Math.PI / n; // 每次增加的角度（弧度）
+
+        for (int i = 0; i < n; i++) {
+            double angle = i * angleIncrement; // 当前角度（弧度）
+            double x = centerX + radius * Math.cos(angle); // 计算x坐标
+            double y = centerY + radius * Math.sin(angle); // 计算y坐标
+
+            // 将x和y坐标交替存储到vertices数组中
+            vertices[2 * i] = x;
+            vertices[2 * i + 1] = y;
+        }
+
+        return vertices;
     }
 
 }
