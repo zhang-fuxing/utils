@@ -1,6 +1,9 @@
 package com.zhangfuxing.tools;
 
+import com.zhangfuxing.tools.chain.CHR;
 import com.zhangfuxing.tools.spring.ioc.Spring;
+
+import java.io.IOException;
 
 /**
  * @author 张福兴
@@ -11,8 +14,12 @@ import com.zhangfuxing.tools.spring.ioc.Spring;
 @Spring
 public class MainClass {
 
-    public static void main(String[] args) {
-
+    public static void main(String[] args) throws IOException {
+        new CHR<String,String>()
+                .register("test", () -> System.out.println("123!!"))
+                .register("dev", () -> System.out.println("342!!"))
+                .register("prod", () -> System.out.println("4588!!"))
+                .runAllMatching("prod");
 
     }
 

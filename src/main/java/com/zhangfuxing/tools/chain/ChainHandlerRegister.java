@@ -3,8 +3,10 @@ package com.zhangfuxing.tools.chain;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -36,7 +38,7 @@ import java.util.stream.Collectors;
  * @email zhangfuxing1010@163.com
  */
 public class ChainHandlerRegister<T, R> {
-    private final ArrayList<ChainHandler<T, R>> chainHandlers = new ArrayList<>();
+    protected final ArrayList<ChainHandler<T, R>> chainHandlers = new ArrayList<>();
 
     public static <T, R> ChainHandlerRegister<T, R> newInstance() {
         return new ChainHandlerRegister<T, R>();
@@ -82,6 +84,105 @@ public class ChainHandlerRegister<T, R> {
      */
     public ChainHandlerRegister<T, R> register(int order, Predicate<T> matcher, Function<T, R> handler) {
         return this.register(new DefaultChainHandlerImpl<>(order, matcher, handler));
+    }
+
+    public <K> ChainHandlerRegister<T, R> register(K key, Runnable handler) {
+        return this.register(key::equals, handler);
+    }
+    public <K> ChainHandlerRegister<T, R> register(int order, K key, Runnable handler) {
+        return this.register(order, key::equals, handler);
+    }
+
+    /**
+     * 注册一个链式匹配器和处理器
+     *
+     * @param matcher 匹配器
+     * @param handler 处理器
+     * @return 当前实例
+     */
+    public ChainHandlerRegister<T, R> register(Predicate<T> matcher, Runnable handler) {
+        return this.register(ChainHandler.DEFAULT_ORDER, matcher, handler);
+    }
+
+    /**
+     * 注册一个链式匹配器和处理器，并指定顺序
+     *
+     * @param order   顺序, 值越小越先执行,需要显示调用 {@link #sorted()} 方法排序, 否则按照注册顺序执行
+     * @param matcher 匹配器
+     * @param handler 处理器
+     * @return 当前实例
+     */
+    public ChainHandlerRegister<T, R> register(int order, Predicate<T> matcher, Runnable handler) {
+        return this.register(new DefaultChainHandlerImpl<>(order, matcher, t -> {
+            handler.run();
+            return null;
+        }));
+    }
+
+
+    public <K> ChainHandlerRegister<T, R> register(K key, Consumer<T> handler) {
+        return this.register(key::equals, handler);
+    }
+
+    public <K> ChainHandlerRegister<T, R> register(int order, K key, Consumer<T> handler) {
+        return this.register(order, key::equals, handler);
+    }
+
+    /**
+     * 注册一个链式匹配器和处理器
+     *
+     * @param matcher 匹配器
+     * @param handler 处理器
+     * @return 当前实例
+     */
+    public ChainHandlerRegister<T, R> register(Predicate<T> matcher, Consumer<T> handler) {
+        return this.register(ChainHandler.DEFAULT_ORDER, matcher, handler);
+    }
+
+    /**
+     * 注册一个链式匹配器和处理器，并指定顺序
+     *
+     * @param order   顺序, 值越小越先执行,需要显示调用 {@link #sorted()} 方法排序, 否则按照注册顺序执行
+     * @param matcher 匹配器
+     * @param handler 处理器
+     * @return 当前实例
+     */
+    public ChainHandlerRegister<T, R> register(int order, Predicate<T> matcher, Consumer<T> handler) {
+        return this.register(new DefaultChainHandlerImpl<>(order, matcher, t -> {
+            handler.accept(t);
+            return null;
+        }));
+    }
+
+    public <K> ChainHandlerRegister<T, R> register(K key, Supplier<R> handler) {
+        return this.register(key::equals, handler);
+    }
+
+    public <K> ChainHandlerRegister<T, R> register(int order, K key, Supplier<R> handler) {
+        return this.register(order, key::equals, handler);
+    }
+
+    /**
+     * 注册一个链式匹配器和处理器
+     *
+     * @param matcher 匹配器
+     * @param handler 处理器
+     * @return 当前实例
+     */
+    public ChainHandlerRegister<T, R> register(Predicate<T> matcher, Supplier<R> handler) {
+        return this.register(ChainHandler.DEFAULT_ORDER, matcher, handler);
+    }
+
+    /**
+     * 注册一个链式匹配器和处理器，并指定顺序
+     *
+     * @param order   顺序, 值越小越先执行,需要显示调用 {@link #sorted()} 方法排序, 否则按照注册顺序执行
+     * @param matcher 匹配器
+     * @param handler 处理器
+     * @return 当前实例
+     */
+    public ChainHandlerRegister<T, R> register(int order, Predicate<T> matcher, Supplier<R> handler) {
+        return this.register(new DefaultChainHandlerImpl<>(order, matcher, t -> handler.get()));
     }
 
     /**
