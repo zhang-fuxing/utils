@@ -55,12 +55,12 @@ public class ChainHandlerRegister<T, R> {
         return this;
     }
 
-    public <K> ChainHandlerRegister<T, R> register(K key, Function<T, R> handler) {
-        return this.register(key::equals, handler);
+    public <K> ChainHandlerRegister<T, R> addFunction(K key, Function<T, R> handler) {
+        return this.addFunction(key::equals, handler);
     }
 
-    public <K> ChainHandlerRegister<T, R> register(int order, K key, Function<T, R> handler) {
-        return this.register(order, key::equals, handler);
+    public <K> ChainHandlerRegister<T, R> addFunction(int order, K key, Function<T, R> handler) {
+        return this.addFunction(order, key::equals, handler);
     }
 
     /**
@@ -70,8 +70,8 @@ public class ChainHandlerRegister<T, R> {
      * @param handler 处理器
      * @return 当前实例
      */
-    public ChainHandlerRegister<T, R> register(Predicate<T> matcher, Function<T, R> handler) {
-        return this.register(ChainHandler.DEFAULT_ORDER, matcher, handler);
+    public ChainHandlerRegister<T, R> addFunction(Predicate<T> matcher, Function<T, R> handler) {
+        return this.addFunction(ChainHandler.DEFAULT_ORDER, matcher, handler);
     }
 
     /**
@@ -82,15 +82,17 @@ public class ChainHandlerRegister<T, R> {
      * @param handler 处理器
      * @return 当前实例
      */
-    public ChainHandlerRegister<T, R> register(int order, Predicate<T> matcher, Function<T, R> handler) {
+    public ChainHandlerRegister<T, R> addFunction(int order, Predicate<T> matcher, Function<T, R> handler) {
         return this.register(new DefaultChainHandlerImpl<>(order, matcher, handler));
     }
 
-    public <K> ChainHandlerRegister<T, R> register(K key, Runnable handler) {
-        return this.register(key::equals, handler);
+    // runnable
+    public <K> ChainHandlerRegister<T, R> addRunnable(K key, Runnable handler) {
+        return this.addRunnable(key::equals, handler);
     }
-    public <K> ChainHandlerRegister<T, R> register(int order, K key, Runnable handler) {
-        return this.register(order, key::equals, handler);
+
+    public <K> ChainHandlerRegister<T, R> runnable(int order, K key, Runnable handler) {
+        return this.addRunnable(order, key::equals, handler);
     }
 
     /**
@@ -100,8 +102,8 @@ public class ChainHandlerRegister<T, R> {
      * @param handler 处理器
      * @return 当前实例
      */
-    public ChainHandlerRegister<T, R> register(Predicate<T> matcher, Runnable handler) {
-        return this.register(ChainHandler.DEFAULT_ORDER, matcher, handler);
+    public ChainHandlerRegister<T, R> addRunnable(Predicate<T> matcher, Runnable handler) {
+        return this.addRunnable(ChainHandler.DEFAULT_ORDER, matcher, handler);
     }
 
     /**
@@ -112,20 +114,20 @@ public class ChainHandlerRegister<T, R> {
      * @param handler 处理器
      * @return 当前实例
      */
-    public ChainHandlerRegister<T, R> register(int order, Predicate<T> matcher, Runnable handler) {
+    public ChainHandlerRegister<T, R> addRunnable(int order, Predicate<T> matcher, Runnable handler) {
         return this.register(new DefaultChainHandlerImpl<>(order, matcher, t -> {
             handler.run();
             return null;
         }));
     }
 
-
-    public <K> ChainHandlerRegister<T, R> register(K key, Consumer<T> handler) {
-        return this.register(key::equals, handler);
+    // consumer
+    public <K> ChainHandlerRegister<T, R> addConsumer(K key, Consumer<T> handler) {
+        return this.addConsumer(key::equals, handler);
     }
 
-    public <K> ChainHandlerRegister<T, R> register(int order, K key, Consumer<T> handler) {
-        return this.register(order, key::equals, handler);
+    public <K> ChainHandlerRegister<T, R> addConsumer(int order, K key, Consumer<T> handler) {
+        return this.addConsumer(order, key::equals, handler);
     }
 
     /**
@@ -135,8 +137,8 @@ public class ChainHandlerRegister<T, R> {
      * @param handler 处理器
      * @return 当前实例
      */
-    public ChainHandlerRegister<T, R> register(Predicate<T> matcher, Consumer<T> handler) {
-        return this.register(ChainHandler.DEFAULT_ORDER, matcher, handler);
+    public ChainHandlerRegister<T, R> addConsumer(Predicate<T> matcher, Consumer<T> handler) {
+        return this.addConsumer(ChainHandler.DEFAULT_ORDER, matcher, handler);
     }
 
     /**
@@ -147,19 +149,20 @@ public class ChainHandlerRegister<T, R> {
      * @param handler 处理器
      * @return 当前实例
      */
-    public ChainHandlerRegister<T, R> register(int order, Predicate<T> matcher, Consumer<T> handler) {
+    public ChainHandlerRegister<T, R> addConsumer(int order, Predicate<T> matcher, Consumer<T> handler) {
         return this.register(new DefaultChainHandlerImpl<>(order, matcher, t -> {
             handler.accept(t);
             return null;
         }));
     }
 
-    public <K> ChainHandlerRegister<T, R> register(K key, Supplier<R> handler) {
-        return this.register(key::equals, handler);
+    // supplier
+    public <K> ChainHandlerRegister<T, R> addSupplier(K key, Supplier<R> handler) {
+        return this.addSupplier(key::equals, handler);
     }
 
-    public <K> ChainHandlerRegister<T, R> register(int order, K key, Supplier<R> handler) {
-        return this.register(order, key::equals, handler);
+    public <K> ChainHandlerRegister<T, R> addSupplier(int order, K key, Supplier<R> handler) {
+        return this.addSupplier(order, key::equals, handler);
     }
 
     /**
@@ -169,8 +172,8 @@ public class ChainHandlerRegister<T, R> {
      * @param handler 处理器
      * @return 当前实例
      */
-    public ChainHandlerRegister<T, R> register(Predicate<T> matcher, Supplier<R> handler) {
-        return this.register(ChainHandler.DEFAULT_ORDER, matcher, handler);
+    public ChainHandlerRegister<T, R> addSupplier(Predicate<T> matcher, Supplier<R> handler) {
+        return this.addSupplier(ChainHandler.DEFAULT_ORDER, matcher, handler);
     }
 
     /**
@@ -181,7 +184,7 @@ public class ChainHandlerRegister<T, R> {
      * @param handler 处理器
      * @return 当前实例
      */
-    public ChainHandlerRegister<T, R> register(int order, Predicate<T> matcher, Supplier<R> handler) {
+    public ChainHandlerRegister<T, R> addSupplier(int order, Predicate<T> matcher, Supplier<R> handler) {
         return this.register(new DefaultChainHandlerImpl<>(order, matcher, t -> handler.get()));
     }
 
