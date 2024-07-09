@@ -1,6 +1,5 @@
 package com.zhangfuxing.tools;
 
-import com.zhangfuxing.tools.file.DataSizeUnit;
 import com.zhangfuxing.tools.file.Fs;
 import com.zhangfuxing.tools.spring.ioc.Spring;
 
@@ -16,11 +15,9 @@ import java.io.IOException;
 public class MainClass {
 
     public static void main(String[] args) throws IOException {
-        DataSizeUnit unit = DataSizeUnit.parseUnit("123.1 pb");
-        double v = unit.parseSize("123.1 pb");
-        System.out.printf("%f",v);
-        System.out.println();
-        System.out.println(Fs.formatSize((long) v));
+        String size = Fs.formatSize(12333312312441L);
+        System.out.println(size);
+        System.out.println(Fs.parseSize(size));
     }
 
 }

@@ -131,7 +131,7 @@ public class Fs {
     public static long parseSize(String sizeText) {
         if (sizeText == null || sizeText.isBlank()) return 0L;
         DataSizeUnit unit = DataSizeUnit.parseUnit(sizeText);
-        return 1L;
+        return (long) (unit.parseSize(sizeText));
     }
 
     private static void checkBiParam(String source, String target) throws FileNotFoundException {
