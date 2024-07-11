@@ -24,6 +24,7 @@ public enum DataSizeUnit {
     static final String p = "^\\d+(\\.\\d{1,2})?(P|PB)$";
     static final String e = "^\\d+(\\.\\d{1,2})?(E|EB)$";
 
+    static final Pattern patternB = Pattern.compile("^\\d+(\\.\\d{1,2})?(B)$");
     static final Pattern patternK = Pattern.compile(k);
     static final Pattern patternM = Pattern.compile(m);
     static final Pattern patternG = Pattern.compile(g);
@@ -55,14 +56,15 @@ public enum DataSizeUnit {
         if (patternT.matcher(sizeText).matches()) return TB;
         if (patternP.matcher(sizeText).matches()) return PB;
         if (patternE.matcher(sizeText).matches()) return EB;
-        return B;
+        if (patternB.matcher(sizeText).matches()) return B;
+        throw new NumberFormatException();
     }
 
     public double parseSize(String sizeText) {
         sizeText = sizeText.toUpperCase().replaceAll("\\s+", "");
         String name = this.name();
         if (sizeText.endsWith(name)) {
-            sizeText = sizeText.substring(0, sizeText.length() - 2);
+            sizeText = sizeText.substring(0, sizeText.length() - this.name().length());
         } else {
             sizeText = sizeText.substring(0, sizeText.length() - 1);
         }

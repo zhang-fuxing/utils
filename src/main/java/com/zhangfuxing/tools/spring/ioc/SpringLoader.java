@@ -83,6 +83,7 @@ public class SpringLoader {
         }
 
     }
+
     private static ConfigurableApplicationContext loadContext(Class<?> mainClass, Class<?>[] applicationListener, String[] args) {
         var context = new AnnotationConfigApplicationContext();
         Spring annotation = mainClass.getAnnotation(Spring.class);

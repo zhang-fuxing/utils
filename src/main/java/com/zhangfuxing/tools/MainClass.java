@@ -3,8 +3,6 @@ package com.zhangfuxing.tools;
 import com.zhangfuxing.tools.file.Fs;
 import com.zhangfuxing.tools.spring.ioc.Spring;
 
-import java.io.IOException;
-
 /**
  * @author 张福兴
  * @version 1.0
@@ -14,10 +12,8 @@ import java.io.IOException;
 @Spring
 public class MainClass {
 
-    public static void main(String[] args) throws IOException {
-        String size = Fs.formatSize(12333312312441L);
-        System.out.println(size);
-        System.out.println(Fs.parseSize(size));
+    public static void main(String[] args) {
+        System.out.println(Fs.parseSize("1231233 m"));
     }
 
 }

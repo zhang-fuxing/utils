@@ -22,8 +22,37 @@ public class FileLoadUtil {
     private static final Logger log = LoggerFactory.getLogger(FileLoadUtil.class);
     public static final String classpath = "classpath:";
     // 查找文件路径，按顺序查找
-    static String[] findPath = {"./config", "./", classpath};
+    static String[] findPath;
     public static final String loadConfirmFile = "confirm:";
+
+    static {
+        init();
+    }
+
+    public static void setFindPath(String... dirs) {
+        findPath = dirs;
+    }
+
+    public static void appendTailFindPath(String... dirs) {
+        String[] temp = new String[dirs.length + findPath.length];
+        System.arraycopy(findPath, 0, temp, 0, findPath.length);
+        System.arraycopy(dirs, 0, temp, findPath.length, dirs.length);
+        findPath = temp;
+    }
+
+    public static void appendHeadFindPath(String... dirs) {
+        int len = dirs.length + findPath.length;
+        String[] temp = new String[len];
+        System.arraycopy(dirs, 0, temp, 0, dirs.length);
+        System.arraycopy(findPath, 0, temp, dirs.length, findPath.length);
+        findPath = temp;
+    }
+
+    public static void resetFindPath() {
+        init();
+    }
+
+
 
     public static InputStream load(String filepath, AtomicReference<String> atomicString, String... findOrder) throws FileNotFoundException {
         if (findOrder.length == 0) {
@@ -83,7 +112,8 @@ public class FileLoadUtil {
     public static InputStream loadFile(String filepath, String location) throws FileNotFoundException {
         return load(filepath, null, Str.isBlank(location) ? findPath : new String[]{location});
     }
-    public static InputStream loadFile(String filepath, AtomicReference<String> loadPath,String location) throws FileNotFoundException {
+
+    public static InputStream loadFile(String filepath, AtomicReference<String> loadPath, String location) throws FileNotFoundException {
         return load(filepath, loadPath, Str.isBlank(location) ? findPath : new String[]{location});
     }
 
@@ -100,4 +130,9 @@ public class FileLoadUtil {
             throw new RuntimeException(e);
         }
     }
+
+    private static void init() {
+        findPath = new String[]{"./config", "./", classpath};
+    }
+
 }
