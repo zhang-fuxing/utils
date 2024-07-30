@@ -1,10 +1,10 @@
 package com.zhangfuxing.tools.util;
 
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import cn.hutool.core.collection.CollUtil;
+import com.zhangfuxing.tools.common.enums.BasicType;
+
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
@@ -51,6 +51,85 @@ public class RefUtil {
         return Arrays.stream(getAllFields(clazz))
                 .filter(filter)
                 .toList();
+    }
+
+    public static <E> E newInstance(Class<E> clazz, Object... params) {
+        assert clazz != null;
+        E result;
+
+        if (params == null || params.length == 0) {
+            Constructor<E> constructor = null;
+            try {
+                constructor = clazz.getDeclaredConstructor();
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("该类未提供无参构造方法，无法实例化：class=" + clazz.getName());
+            }
+            constructor.setAccessible(true);
+            try {
+                result = constructor.newInstance();
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException("实例化失败", e);
+            }
+        } else {
+            Constructor<E> constructor = null;
+            Class<?>[] array = Arrays.stream(params).map(o -> {
+                if (o instanceof Null<?> t) {
+                    return t.clazz;
+                }
+                return o == null ? Object.class : o.getClass();
+            }).toArray(Class[]::new);
+            List<Constructor<?>> constructorList = Arrays.stream(clazz.getDeclaredConstructors())
+                    .filter(c -> c.getParameterTypes().length == array.length)
+                    .toList();
+            if (CollUtil.isEmpty(constructorList)) {
+                throw new RuntimeException("未找到ParamsSize=%d的构造方法".formatted(array.length));
+            }
+
+            for (Constructor<?> item : constructorList) {
+                Class<?>[] parameterTypes = item.getParameterTypes();
+                if (typeEq(parameterTypes, array)) {
+                    //noinspection unchecked
+                    constructor = (Constructor<E>) item;
+                    break;
+                }
+            }
+
+            if (constructor == null) {
+                throw new RuntimeException("未找到符合参数类型的构造方法");
+            }
+            try {
+                constructor.setAccessible(true);
+                params = Arrays.stream(params)
+                        .map(o -> o instanceof Null<?> ? null : o)
+                        .toArray();
+                result = constructor.newInstance(params);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException("实例化失败", e);
+            }
+        }
+
+        return result;
+    }
+
+    private static boolean typeEq(Class<?>[] types, Class<?>[] params) {
+        if ((types == null || types.length == 0) && (params == null || params.length == 0)) {
+            return true;
+        }
+        if (types == null || params == null) return false;
+        if (types.length != params.length) {
+            return false;
+        }
+        for (int i = 0; i < types.length; i++) {
+            Class<?> type = types[i];
+            Class<?> param = params[i];
+            if (BasicType.isBasicType(type) && BasicType.isBasicType(param)) {
+                if (BasicType.unwrapper(type) != BasicType.unwrapper(param)) return false;
+            } else if (!type.isAssignableFrom(param)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public record Null<T>(Class<T> clazz) {

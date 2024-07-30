@@ -14,7 +14,7 @@ import java.io.InputStreamReader;
  * @date 2024/4/28
  * @email zhangfuxing1010@163.com
  */
-public class SpringLoader {
+public class SpringLoader  {
 
     private static final String listenerPath = "META-INF/spring.listener";
     private static ConfigurableApplicationContext context;
@@ -101,5 +101,7 @@ public class SpringLoader {
         SpringLoader.context = context;
         return context;
     }
+
+
 
 }
