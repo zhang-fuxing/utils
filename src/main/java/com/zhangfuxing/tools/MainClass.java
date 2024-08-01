@@ -2,7 +2,11 @@ package com.zhangfuxing.tools;
 
 import cn.hutool.json.JSONUtil;
 import com.zhangfuxing.tools.group.GroupBuilder;
+import com.zhangfuxing.tools.spi.SpiUtil;
+import com.zhangfuxing.tools.spring.aop.IService;
 import com.zhangfuxing.tools.spring.ioc.Spring;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,8 +20,14 @@ import java.util.Map;
  */
 @Spring
 public class MainClass {
+    static Logger logger = LoggerFactory.getLogger(MainClass.class);
 
     public static void main(String[] args) {
+        IService iService = SpiUtil.loadFirst(IService.class);
+        iService.doSomething();
+
+    }
+    void testGroup() {
         List<GT> list = List.of(
                 G(1, 12, 0, "ce"),
                 G(2, 33, 1, "ww"),
@@ -37,9 +47,8 @@ public class MainClass {
                 .end()
                 .build();
         System.out.println(JSONUtil.toJsonStr(build));
-
-
     }
+
     static GT G(Integer id, Integer name, Integer type, String desc) {
         return new GT(id, name, type, desc);
     }
