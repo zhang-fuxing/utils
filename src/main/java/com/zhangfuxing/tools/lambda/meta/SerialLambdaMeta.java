@@ -30,14 +30,15 @@ public class SerialLambdaMeta implements Serializable,LambdaMeta {
              ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(serializable);
             oos.flush();
-            try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())) {
+            ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())) {
                 @Override
                 protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
                     return super.resolveClass(desc);
                 }
 
-            }) {
-                return (SerializedLambda) ois.readObject();
+            };
+            try (objectInputStream) {
+                return (SerializedLambda) objectInputStream.readObject();
             }
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);

@@ -2,12 +2,15 @@ package com.zhangfuxing.tools;
 
 import cn.hutool.json.JSONUtil;
 import com.zhangfuxing.tools.group.GroupBuilder;
-import com.zhangfuxing.tools.spi.SpiUtil;
-import com.zhangfuxing.tools.spring.aop.IService;
+import com.zhangfuxing.tools.io.Model;
+import com.zhangfuxing.tools.io.RandomResource;
 import com.zhangfuxing.tools.spring.ioc.Spring;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -22,11 +25,12 @@ import java.util.Map;
 public class MainClass {
     static Logger logger = LoggerFactory.getLogger(MainClass.class);
 
-    public static void main(String[] args) {
-        IService iService = SpiUtil.loadFirst(IService.class);
-        iService.doSomething();
-
+    public static void main(String[] args) throws FileNotFoundException {
+        RandomResource.create(new File("D:/redis.tar"), Model.R, null)
+                .readChunk(new FileOutputStream("H:/redis-m.tar"), 1024*1024*1024);
     }
+
+
     void testGroup() {
         List<GT> list = List.of(
                 G(1, 12, 0, "ce"),

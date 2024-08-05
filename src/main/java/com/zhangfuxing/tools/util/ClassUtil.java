@@ -46,7 +46,16 @@ public class ClassUtil {
         }
     }
 
-    public static Class<?> loadClass(String name, ClassLoader... classLoaders) throws ClassNotFoundException {
+    public static Class<?> loadClass(String className) throws ClassNotFoundException {
+        return loadClass(className, getClassLoaders(ClassUtil.class.getClassLoader()));
+    }
+
+    public static Class<?> loadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
+        ClassLoader[] classLoaders = getClassLoaders(classLoader);
+        return loadClass(className, classLoaders);
+    }
+
+    private static Class<?> loadClass(String name, ClassLoader... classLoaders) throws ClassNotFoundException {
         for (ClassLoader classLoader : classLoaders) {
             if (classLoader == null) {
                 continue;

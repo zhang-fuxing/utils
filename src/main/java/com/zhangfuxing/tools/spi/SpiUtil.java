@@ -13,17 +13,14 @@ import java.util.*;
 public class SpiUtil {
 
     public static <T> T loadFirst(Class<T> clazz) {
-        Objects.requireNonNull(clazz);
         return loadFirst(clazz, null, null);
     }
 
     public static <T> T loadFirst(Class<T> clazz, T defaultValue) {
-        Objects.requireNonNull(clazz);
         return loadFirst(clazz, null, defaultValue);
     }
 
     public static <T> T loadFirst(Class<T> clazz, ClassLoader classLoader) {
-        Objects.requireNonNull(clazz);
         return loadFirst(clazz, classLoader, null);
     }
 
@@ -34,14 +31,15 @@ public class SpiUtil {
         while (iterator.hasNext()) {
             try {
                 return iterator.next();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                // 记录错误日志
+                System.err.println("Error loading service: " + e.getMessage());
             }
         }
         return defaultValue;
     }
 
     public static <T> Collection<T> loadAll(Class<T> clazz) {
-        Objects.requireNonNull(clazz);
         return loadAll(clazz, new ArrayList<>());
     }
 
@@ -53,7 +51,8 @@ public class SpiUtil {
         while (iterator.hasNext()) {
             try {
                 collection.add(iterator.next());
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                System.err.println("Error loading service: " + e.getMessage());
             }
         }
         return collection;
@@ -67,10 +66,11 @@ public class SpiUtil {
             try {
                 load = ServiceLoader.load(clazz, loader);
                 break;
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                System.err.println("Error loading service: " + e.getMessage());
             }
         }
-        if (load == null) throw new NoSuchElementException();
+        if (load == null) throw new NoSuchElementException("No service loader found for class: " + clazz.getName());
         return load;
     }
 }
