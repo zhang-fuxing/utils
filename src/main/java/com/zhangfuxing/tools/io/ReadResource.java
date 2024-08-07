@@ -1,7 +1,5 @@
 package com.zhangfuxing.tools.io;
 
-import org.springframework.stereotype.Component;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.util.Optional;
@@ -276,4 +274,5 @@ public class ReadResource {
             throw new IllegalArgumentException("filepath not found: " + filepath);
         }
     }
+
 }

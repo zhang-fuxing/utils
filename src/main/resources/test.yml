@@ -1,0 +1,14 @@
+env:
+  appName: 'test'
+  host: 'localhost'
+  suffix:
+    - 'txt'
+    - 'exe'
+    - 'jpg'
+  obj:
+    -
+      age: '18'
+      name: 'zhang'
+    -
+      age: '20'
+      name: 'huang'
