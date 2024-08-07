@@ -1,19 +1,13 @@
 package com.zhangfuxing.tools;
 
-import cn.hutool.json.JSONUtil;
 import com.zhangfuxing.tools.group.GroupBuilder;
-import com.zhangfuxing.tools.io.Model;
-import com.zhangfuxing.tools.io.RandomResource;
 import com.zhangfuxing.tools.spring.ioc.Spring;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author 张福兴
@@ -26,12 +20,11 @@ public class MainClass {
     static Logger logger = LoggerFactory.getLogger(MainClass.class);
 
     public static void main(String[] args) throws FileNotFoundException {
-        RandomResource.create(new File("D:/redis.tar"), Model.R, null)
-                .readChunk(new FileOutputStream("H:/redis-m.tar"), 1024*1024*1024);
+        testGroup();
     }
 
 
-    void testGroup() {
+    static void testGroup() {
         List<GT> list = List.of(
                 G(1, 12, 0, "ce"),
                 G(2, 33, 1, "ww"),
@@ -40,22 +33,23 @@ public class MainClass {
                 G(2, 303, 1, "2#"),
                 G(2, 3, 1, "2aa")
         );
-        Collection<Map<String, Object>> build = GroupBuilder.create(list)
-                .groupBy(GT::getId)
+        Collection<GtId> objects = GroupBuilder.create(list, GtId.class)
+                .groupBy(GT::getId, GtCh.class)
                 .mainField(GT::getName)
-                .setChildName(GT::getType)
+                .setChildName(GtId::getGtchs)
                 .end()
-                .groupBy(GT::getType)
+                .groupBy(GT::getType, GtCh.class, GtDesc.class)
+                .setChildName(GtCh::getDesc)
                 .childFiled(GT::getDesc)
-                .setChildName(GT::getDesc)
                 .end()
-                .build();
-        System.out.println(JSONUtil.toJsonStr(build));
+                .buildToBean();
+        System.out.println(objects);
     }
 
     static GT G(Integer id, Integer name, Integer type, String desc) {
         return new GT(id, name, type, desc);
     }
+
     static class GT {
         Integer id;
         Integer name;
@@ -108,6 +102,93 @@ public class MainClass {
                    ", name=" + name +
                    ", type=" + type +
                    ", desc='" + desc + '\'' +
+                   '}';
+        }
+    }
+
+    static class GtId {
+        Integer id;
+        Integer name;
+        List<GtCh> gtchs;
+
+        public List<GtCh> getGtchs() {
+            return gtchs;
+        }
+
+        public void setGtchs(List<GtCh> gtchs) {
+            this.gtchs = gtchs;
+        }
+
+        public Integer getId() {
+            return id;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
+        }
+
+        public Integer getName() {
+            return name;
+        }
+
+        public void setName(Integer name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return "GtId{" +
+                   "id=" + id +
+                   ", name=" + name +
+                   ", gtchs=" + gtchs +
+                   '}';
+        }
+    }
+
+    static class GtCh {
+        Integer type;
+        List<GtDesc> desc;
+
+        public Integer getType() {
+            return type;
+        }
+
+        public void setType(Integer type) {
+            this.type = type;
+        }
+
+        public List<GtDesc> getDesc() {
+            return desc;
+        }
+
+        public void setDesc(List<GtDesc> desc) {
+            this.desc = desc;
+        }
+
+        @Override
+        public String toString() {
+            return "GtCh{" +
+                   "type=" + type +
+                   ", desc=" + desc +
+                   '}';
+        }
+    }
+
+    static class GtDesc {
+        private String desc;
+
+        public String getDesc() {
+            return desc;
+        }
+
+        public void setDesc(String desc) {
+            this.desc = desc;
+        }
+
+        @Override
+        public String toString() {
+            return "GtDesc{" +
+                   "desc='" + desc + '\'' +
                    '}';
         }
     }

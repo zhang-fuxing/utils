@@ -44,8 +44,8 @@ public enum BasicType {
         return (null == result) ? clazz : result;
     }
 
-    public static Class<?> unwrapper(Class<?> clazz){
-        if(null == clazz || clazz.isPrimitive()){
+    public static Class<?> unwrapper(Class<?> clazz) {
+        if (null == clazz || clazz.isPrimitive()) {
             return clazz;
         }
         Class<?> result = typeUnMapping.get(clazz);
@@ -55,5 +55,35 @@ public enum BasicType {
     public static boolean isBasicType(Class<?> clazz) {
         if (clazz == null) return false;
         return typeMapping.containsKey(clazz) || typeUnMapping.containsKey(clazz);
+    }
+
+    @SuppressWarnings("UnnecessaryUnboxing")
+    public static <V> Object autoWrapper(Class<?> clazz, V value) {
+        if (clazz == null || value == null) return null;
+
+        if (clazz.isPrimitive()) {
+            // 处理从包装类型到基本类型的转换（如果value是包装类型）
+            if (value instanceof Number numValue) {
+                if (clazz == int.class) return numValue.intValue();
+                if (clazz == long.class) return numValue.longValue();
+                if (clazz == double.class) return numValue.doubleValue();
+                if (clazz == float.class) return numValue.floatValue();
+                if (clazz == short.class) return numValue.shortValue();
+                if (clazz == byte.class) return numValue.byteValue();
+            }
+            if (clazz == boolean.class) {
+                if (value instanceof Boolean) return ((Boolean) value).booleanValue();
+            }
+            if (clazz == char.class) {
+                if (value instanceof Character) return ((Character) value).charValue();
+            }
+
+        } else {
+            // 处理从基本类型到包装类型的自动装箱，或从同类型的包装类型到包装类型的直接转换
+            if (value.getClass().isAssignableFrom(clazz)) {
+                return value; // 直接返回，如果value已经是clazz类型的实例
+            }
+        }
+        return null;
     }
 }

@@ -9,25 +9,34 @@ import java.util.List;
 /**
  * @author 张福兴
  * @version 1.0
- * @date 2024/7/29
+ * @date 2024/8/6
  * @email zhangfuxing1010@163.com
  */
-public class GroupKey<T, K> {
+public class GroupBenRules<T, K, E, ChildClass> {
+    // 提取分组主要属性的提取函数
     SFun<T, K> keyExt;
+    // 提取分组父级属性的函数列表
     List<SFun<T, ?>> ext;
+    // 提取子级属性的函数列表
     List<SFun<T, ?>> child;
+    // 子级的名称
     String childName = "child";
-    GroupBuilder<T> builder;
+    // 当前使用的构建者对象
+    GroupBuilder<T,E> builder;
+    // 转换到目标类的类对象
+    Class<E> targetClass;
+    Class<ChildClass> childClass;
 
-    public GroupKey() {
+    public GroupBenRules() {
         ext = new ArrayList<>();
         child = new ArrayList<>();
     }
 
-    public GroupKey(SFun<T, K> sFun) {
-        this.keyExt = sFun;
-        this.ext = new ArrayList<>();
-        this.child = new ArrayList<>();
+    public GroupBenRules(SFun<T, K> keyExt, Class<E> targetClass, Class<ChildClass> childClass) {
+        this();
+        this.keyExt = keyExt;
+        this.targetClass = targetClass;
+        this.childClass = childClass;
     }
 
     /**
@@ -37,7 +46,7 @@ public class GroupKey<T, K> {
      * @param <V>    值类型
      * @return 当前分组对象
      */
-    public <V> GroupKey<T, K> mainField(SFun<T, V> extFun) {
+    public <V> GroupBenRules<T, K, E,ChildClass> mainField(SFun<T, V> extFun) {
         this.ext.add(extFun);
         return this;
     }
@@ -62,7 +71,7 @@ public class GroupKey<T, K> {
      * @param <V>    返回的值类型
      * @return 当前的分组对象
      */
-    public <V> GroupKey<T, K> childFiled(SFun<T, V> extFun) {
+    public <V> GroupBenRules<T, K, E,ChildClass> childFiled(SFun<T, V> extFun) {
         this.child.add(extFun);
         return this;
     }
@@ -73,12 +82,12 @@ public class GroupKey<T, K> {
      * @param childName 名称
      * @return 当前分组对
      */
-    public GroupKey<T, K> setChildName(String childName) {
+    public GroupBenRules<T, K, E,ChildClass> setChildName(String childName) {
         this.childName = childName;
         return this;
     }
 
-    public GroupKey<T, K> setChildName(SFun<T, ?> lambda) {
+    public GroupBenRules<T, K, E,ChildClass> setChildName(SFun<E, ?> lambda) {
         this.childName = LambdaUtil.getName(lambda);
         return this;
     }
@@ -88,8 +97,8 @@ public class GroupKey<T, K> {
      *
      * @return 分组构造者对象
      */
-    public GroupBuilder<T> end() {
-        builder.groupQueue.add(this);
+    public GroupBuilder<T,E> end() {
+        builder.groupQueueBean.add(this);
         return builder;
     }
 }

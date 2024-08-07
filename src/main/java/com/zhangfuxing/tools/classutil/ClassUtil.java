@@ -1,4 +1,4 @@
-package com.zhangfuxing.tools.util;
+package com.zhangfuxing.tools.classutil;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -75,5 +75,26 @@ public class ClassUtil {
                 ClassUtil.class.getClassLoader(),
                 ClassLoader.getSystemClassLoader()
         };
+    }
+
+    public static boolean isPrimitive(Class<?> clazz) {
+        if (null == clazz) {
+            return false;
+        }
+        return BasicType.PRIMITIVE_WRAPPER_MAP.containsKey(clazz);
+    }
+
+    public static boolean isPrimitiveWrapper(Class<?> clazz) {
+        if (null == clazz) {
+            return false;
+        }
+        return BasicType.WRAPPER_PRIMITIVE_MAP.containsKey(clazz);
+    }
+
+    public static boolean isBasicType(Class<?> clazz) {
+        if (null == clazz) {
+            return false;
+        }
+        return isPrimitive(clazz) || isPrimitiveWrapper(clazz);
     }
 }

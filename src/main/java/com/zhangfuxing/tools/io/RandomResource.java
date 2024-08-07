@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * @date 2024/8/1
  * @email zhangfuxing1010@163.com
  */
-public class RandomResource {
+public class RandomResource implements Closeable{
     File file;
     RandomAccessFile raf;
     Consumer<Exception> exceptionHandler;
@@ -134,6 +134,7 @@ public class RandomResource {
     }
 
 
+    @Override
     public void close() {
         CloseUtil.close(exceptionHandler, raf);
     }

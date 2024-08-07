@@ -1,6 +1,6 @@
 package com.zhangfuxing.tools.lambda.meta;
 
-import com.zhangfuxing.tools.util.ClassUtil;
+import com.zhangfuxing.tools.classutil.ClassUtil;
 
 import java.io.*;
 import java.lang.invoke.SerializedLambda;

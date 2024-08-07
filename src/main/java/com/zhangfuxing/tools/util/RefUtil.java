@@ -2,6 +2,7 @@ package com.zhangfuxing.tools.util;
 
 
 import cn.hutool.core.collection.CollUtil;
+import com.zhangfuxing.tools.classutil.ClassUtil;
 import com.zhangfuxing.tools.common.enums.BasicType;
 
 import java.lang.reflect.*;
@@ -130,6 +131,35 @@ public class RefUtil {
         }
 
         return true;
+    }
+
+    public static <E, K> void setField(E instance, String fieldName, K value, boolean ignoreEx) {
+        try {
+            if (value == null) return;
+            Field field = getField(instance, fieldName);
+            if (field == null) throw new NoSuchFieldException("%s中未找到字段%s".formatted(instance.getClass().getName(), fieldName));
+            field.setAccessible(true);
+            Class<?> fieldClass = field.getType();
+            Class<?> valueClass = value.getClass();
+            if (fieldClass == valueClass) {
+                field.set(instance, value);
+            } else if (ClassUtil.isBasicType(fieldClass) && ClassUtil.isBasicType(valueClass)) {
+                Object setValue = BasicType.autoWrapper(fieldClass, value);
+                field.set(instance, setValue);
+            } else {
+                field.set(instance, fieldClass.cast(value));
+            }
+
+        } catch (Exception e) {
+            if (!ignoreEx) throw new RuntimeException(e);
+        }
+    }
+
+    public static Field getField(Object obj, String fieldName) {
+        return Arrays.stream(getAllFields(obj.getClass()))
+                .filter(o -> o.getName().equals(fieldName))
+                .findFirst()
+                .orElse(null);
     }
 
     public record Null<T>(Class<T> clazz) {

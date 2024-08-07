@@ -1,6 +1,6 @@
 package com.zhangfuxing.tools.spi;
 
-import com.zhangfuxing.tools.util.ClassUtil;
+import com.zhangfuxing.tools.classutil.ClassUtil;
 
 import java.util.*;
 
