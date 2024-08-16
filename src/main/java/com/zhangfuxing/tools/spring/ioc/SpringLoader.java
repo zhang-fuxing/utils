@@ -34,8 +34,6 @@ public class SpringLoader  {
         return loadContext(mainClass, null, args);
     }
 
-
-
     public static ConfigurableApplicationContext getContext() {
         if (SpringLoader.context == null) {
             throw new RuntimeException("Spring context is not initialized");
@@ -101,7 +99,6 @@ public class SpringLoader  {
         SpringLoader.context = context;
         return context;
     }
-
 
 
 }

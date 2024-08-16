@@ -2,12 +2,10 @@ package com.zhangfuxing.tools.file;
 
 import com.zhangfuxing.tools.util.Str;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.util.List;
@@ -140,5 +138,18 @@ public class Fs {
         if (!Files.exists(Path.of(source))) {
             throw new FileNotFoundException("未找到文件：" + source);
         }
+    }
+
+    public static void write(File file, String content) {
+        if (file == null) return;
+        try {
+            Files.createDirectories(file.getParentFile().toPath());
+            Files.createFile(file.toPath());
+            FileChannel channel = getChannel(file.getPath(), StandardOpenOption.WRITE);
+            int write = channel.write(ByteBuffer.wrap(content.getBytes()));
+            channel.close();
+        } catch (IOException ignored) {
+        }
+
     }
 }
