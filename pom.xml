@@ -105,7 +105,31 @@
                         </archive>
                     </configuration>
                 </plugin>
+
+                <!-- 将项目需要的依赖复制到指定目录下的插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.3.0</version> <!-- 使用适合你项目的版本 -->
+                    <executions>
+                        <execution>
+                            <id>copy-dependencies</id>
+                            <phase>prepare-package</phase> <!-- 或者其他合适的生命周期阶段 -->
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                <!-- 其他可选配置 -->
+                                <includeScope>runtime</includeScope> <!-- 默认就是runtime，可以包括compile, runtime, test, provided, system等 -->
+                                <excludeArtifactIds>junit:junit</excludeArtifactIds> <!-- 排除特定的artifact -->
+                                <excludeTransitive>false</excludeTransitive> <!-- 是否排除传递性依赖 -->
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
+
     </build>
 </project>
