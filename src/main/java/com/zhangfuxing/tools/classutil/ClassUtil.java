@@ -77,6 +77,10 @@ public class ClassUtil {
         };
     }
 
+    public static ClassLoader getClassLoaders(Class<?> clazz) {
+        return clazz.getClassLoader();
+    }
+
     public static boolean isPrimitive(Class<?> clazz) {
         if (null == clazz) {
             return false;

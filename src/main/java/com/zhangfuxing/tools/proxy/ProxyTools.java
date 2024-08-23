@@ -17,7 +17,7 @@ import java.lang.reflect.Proxy;
  * @date 2024/5/6
  * @email zhangfuxing1010@163.com
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "unchecked"})
 public class ProxyTools {
     static ClassFileVersion version = ClassFileVersion.JAVA_V8;
 

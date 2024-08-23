@@ -20,6 +20,7 @@ public class SpringLoader  {
     private static ConfigurableApplicationContext context;
     private static ApplicationListener<?>[] applicationListenerInstance;
 
+    private static volatile Boolean isRunning = false;
 
     public static ConfigurableApplicationContext load(Class<?> mainClass, String[] args) {
         return loadContext(mainClass, null, args);
@@ -97,8 +98,7 @@ public class SpringLoader  {
         addApplicationListener(applicationListener, context);
         context.refresh();
         SpringLoader.context = context;
+        isRunning = true;
         return context;
     }
-
-
 }
