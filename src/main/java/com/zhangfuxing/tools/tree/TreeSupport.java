@@ -24,7 +24,7 @@ public interface TreeSupport<T extends TreeSupport<T>> {
 
     Serializable getRootParentId();
 
-    static <T extends TreeSupport<T>> List<T> getTree(List<T> data) {
+   static <T extends TreeSupport<T>> List<T> getTree(List<T> data) {
         if (data == null || data.isEmpty()) return new ArrayList<>(0);
         Map<Serializable, T> map = new HashMap<>();
         for (T datum : data) {
@@ -40,8 +40,19 @@ public interface TreeSupport<T extends TreeSupport<T>> {
                 continue;
             }
             T childParent = map.get(parentId);
+            if (childParent == null) {
+                if (datum.noneParentAddToRoot()) {
+                    roots.add(datum);
+                    datum.setParentId(datum.getRootParentId());
+                }
+                continue;
+            }
             childParent.addChild(datum);
         }
         return roots;
+    }
+
+    default boolean noneParentAddToRoot() {
+        return true;
     }
 }
