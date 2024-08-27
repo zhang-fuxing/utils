@@ -87,12 +87,16 @@
         </dependency>
 
         <dependency>
-            <groupId>com.deepoove</groupId>
-            <artifactId>poi-tl</artifactId>
-            <version>1.12.2</version>
-            <scope>compile</scope>
-            <optional>true</optional>
+            <groupId>org.docx4j</groupId>
+            <artifactId>docx4j</artifactId>
+            <version>6.1.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>
