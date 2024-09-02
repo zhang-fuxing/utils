@@ -12,6 +12,8 @@ target/
 *.iml
 *.ipr
 .idea/
+.github/
+.mvn/
 
 ### Eclipse ###
 .apt_generated
