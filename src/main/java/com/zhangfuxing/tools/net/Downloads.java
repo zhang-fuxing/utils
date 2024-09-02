@@ -1,6 +1,5 @@
 package com.zhangfuxing.tools.net;
 
-import cn.hutool.core.io.FileUtil;
 import com.zhangfuxing.tools.file.Fs;
 
 import java.io.File;
@@ -26,6 +25,17 @@ import java.util.concurrent.atomic.AtomicReference;
  * @email zhangfuxing1010@163.com
  */
 public class Downloads {
+
+    public static void main(String[] args) throws Exception {
+        // 功能测试
+        var url = "https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.15_240826_x64_01.exe";
+        long s = System.currentTimeMillis();
+        Downloads downloads = new Downloads(url, "QQ_9.9.15_240826_x64_01.exe");
+        downloads.setThreadPoolSize(4);
+        downloads.concurrentDownload();
+        System.out.println(System.currentTimeMillis() - s);
+    }
+
     private String sourceUrl;
     private String savePath;
     private final byte[] buf = new byte[1 << 18];
@@ -42,7 +52,7 @@ public class Downloads {
     //        );
     private ExecutorService threadPool;
     private int coreThreadSize;
-    private String fileName;
+    private final String fileName;
 
     public Downloads(String sourceUrl, String savePath, int threadNum, String fileName) {
         this.sourceUrl = sourceUrl;
@@ -135,7 +145,7 @@ public class Downloads {
     private void exec() {
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(this.sourceUrl));
-            File file = new File(savePath, FileUtil.getName(this.sourceUrl));
+            File file = new File(savePath, Fs.getName(this.sourceUrl));
             if (file.exists()) {
                 builder.header("range", "bytes=" + file.length() + "-");
             }

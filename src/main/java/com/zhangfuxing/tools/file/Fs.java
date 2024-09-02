@@ -152,4 +152,9 @@ public class Fs {
         }
 
     }
+
+    public static String getName(String path) {
+        if (Str.isBlank(path)) return "";
+        return new File(path).getName();
+    }
 }

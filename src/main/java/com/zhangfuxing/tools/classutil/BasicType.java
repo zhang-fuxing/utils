@@ -1,8 +1,7 @@
 package com.zhangfuxing.tools.classutil;
 
-import cn.hutool.core.map.SafeConcurrentHashMap;
-
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author 张福兴
@@ -13,9 +12,9 @@ import java.util.Map;
 public enum BasicType {
     BYTE, SHORT, INT, INTEGER, LONG, DOUBLE, FLOAT, BOOLEAN, CHAR, CHARACTER;
 
-    public static final Map<Class<?>, Class<?>> WRAPPER_PRIMITIVE_MAP = new SafeConcurrentHashMap<>(8);
+    public static final Map<Class<?>, Class<?>> WRAPPER_PRIMITIVE_MAP = new ConcurrentHashMap<>(8);
 
-    public static final Map<Class<?>, Class<?>> PRIMITIVE_WRAPPER_MAP = new SafeConcurrentHashMap<>(8);
+    public static final Map<Class<?>, Class<?>> PRIMITIVE_WRAPPER_MAP = new ConcurrentHashMap<>(8);
 
     static {
         WRAPPER_PRIMITIVE_MAP.put(Boolean.class, boolean.class);

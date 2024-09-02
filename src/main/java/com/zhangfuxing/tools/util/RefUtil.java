@@ -1,7 +1,6 @@
 package com.zhangfuxing.tools.util;
 
 
-import cn.hutool.core.collection.CollUtil;
 import com.zhangfuxing.tools.classutil.ClassUtil;
 import com.zhangfuxing.tools.common.enums.BasicType;
 
@@ -82,7 +81,7 @@ public class RefUtil {
             List<Constructor<?>> constructorList = Arrays.stream(clazz.getDeclaredConstructors())
                     .filter(c -> c.getParameterTypes().length == array.length)
                     .toList();
-            if (CollUtil.isEmpty(constructorList)) {
+            if (constructorList.isEmpty()) {
                 throw new RuntimeException("未找到ParamsSize=%d的构造方法".formatted(array.length));
             }
 
