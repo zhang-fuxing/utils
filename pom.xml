@@ -41,14 +41,7 @@
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
-        <!-- Hutool-all -->
-<!--        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-            <version>5.8.26</version>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>-->
+
         <!-- ByteBuddy ClassAop -->
         <dependency>
             <groupId>net.bytebuddy</groupId>
