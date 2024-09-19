@@ -117,18 +117,18 @@ public class Fs {
         }
     }
 
-    public static String formatSize(long dataSize, DataSizeUnit unit) {
+    public static String formatSize(long dataSize, DataSizeFormat unit) {
         return BigDecimal.valueOf((double) dataSize / unit.unitSize).setScale(2, RoundingMode.HALF_UP) + " " + unit.name();
     }
 
     public static String formatSize(long dataSize) {
-        DataSizeUnit autoUnit = DataSizeUnit.auto(dataSize);
+        DataSizeFormat autoUnit = DataSizeFormat.auto(dataSize);
         return formatSize(dataSize, autoUnit);
     }
 
     public static long parseSize(String sizeText) {
         if (sizeText == null || sizeText.isBlank()) return 0L;
-        DataSizeUnit unit = DataSizeUnit.parseUnit(sizeText);
+        DataSizeFormat unit = DataSizeFormat.parseUnit(sizeText);
         return (long) (unit.parseSize(sizeText));
     }
 

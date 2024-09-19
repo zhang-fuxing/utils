@@ -1,5 +1,7 @@
 package com.zhangfuxing.tools.file;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.regex.Pattern;
 
 /**
@@ -8,7 +10,7 @@ import java.util.regex.Pattern;
  * @date 2024/7/8
  * @email zhangfuxing1010@163.com
  */
-public enum DataSizeUnit {
+public enum DataSizeFormat {
     B(1),
     KB(1024),
     MB(1024 << 10),
@@ -34,11 +36,11 @@ public enum DataSizeUnit {
 
     public final long unitSize;
 
-    DataSizeUnit(long unitSize) {
+    DataSizeFormat(long unitSize) {
         this.unitSize = unitSize;
     }
 
-    public static DataSizeUnit auto(long dataSize) {
+    public static DataSizeFormat auto(long dataSize) {
         if (dataSize >= EB.unitSize) return EB;
         else if (dataSize >= PB.unitSize) return PB;
         else if (dataSize >= TB.unitSize) return TB;
@@ -48,7 +50,7 @@ public enum DataSizeUnit {
         else return B;
     }
 
-    public static DataSizeUnit parseUnit(String sizeText) {
+    public static DataSizeFormat parseUnit(String sizeText) {
         sizeText = sizeText.toUpperCase().replaceAll("\\s+", "");
         if (patternK.matcher(sizeText).matches()) return KB;
         if (patternM.matcher(sizeText).matches()) return MB;
@@ -69,5 +71,14 @@ public enum DataSizeUnit {
             sizeText = sizeText.substring(0, sizeText.length() - 1);
         }
         return Double.parseDouble(sizeText) * this.unitSize;
+    }
+
+    public static String formatSize(long dataSize, DataSizeFormat unit) {
+        return BigDecimal.valueOf((double) dataSize / unit.unitSize).setScale(2, RoundingMode.HALF_UP) + " " + unit.name();
+    }
+
+    public static String formatSize(long dataSize) {
+        DataSizeFormat autoUnit = DataSizeFormat.auto(dataSize);
+        return formatSize(dataSize, autoUnit);
     }
 }
