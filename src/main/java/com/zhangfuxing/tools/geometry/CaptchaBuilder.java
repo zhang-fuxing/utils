@@ -104,6 +104,22 @@ public class CaptchaBuilder {
         return this;
     }
 
+    public CaptchaBuilder backgroundGradient(Color color, Color color2) {
+        captcha.backgroundGradient(color, color2);
+        return this;
+    }
+
+    public CaptchaBuilder setBackgroundGradientType(Captcha.GradientType gradientType) {
+        captcha.setBackgroundGradientType(gradientType);
+        return this;
+    }
+
+    public CaptchaBuilder setTextGradientType(Captcha.GradientType gradientType) {
+        captcha.setTextGradientType(gradientType);
+        return this;
+    }
+
+
     public Captcha build() {
         return captcha;
     }

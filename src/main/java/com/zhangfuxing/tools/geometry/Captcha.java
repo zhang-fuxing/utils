@@ -97,6 +97,23 @@ public class Captcha {
 
     private String currentCode;
 
+    /**
+     * 验证码背景颜色1
+     */
+    private Color background1;
+    /**
+     * 验证码背景颜色2
+     */
+    private Color background2;
+    /**
+     * 是否使用背景颜色渐变
+     */
+    private boolean backgroundGradient;
+
+    private GradientType backgroundGradientType;
+
+    private GradientType textGradientType;
+
     Captcha() {
         this.width = 400;
         this.height = 200;
@@ -114,6 +131,11 @@ public class Captcha {
         this.gradientStart = new Color(93, 178, 215);
         this.gradientEnd = new Color(33, 5, 66);
         this.useGradient = false;
+        this.background1 = new Color(255, 255, 255);
+        this.background2 = new Color(240, 240, 240);
+        this.backgroundGradient = false;
+        this.backgroundGradientType = GradientType.HORIZONTAL;
+        this.textGradientType = GradientType.HORIZONTAL;
         try {
             this.outputStream = new FileOutputStream("captcha.png");
         } catch (FileNotFoundException e) {
@@ -123,6 +145,37 @@ public class Captcha {
 
     public static CaptchaBuilder builder() {
         return CaptchaBuilder.createBuilder();
+    }
+
+    /**
+     * 颜色值转颜色对象
+     *
+     * @param hex 颜色值
+     * @return 颜色对象
+     */
+    public static Color hex2Color(String hex) {
+        if (hex == null || (hex.length() != 7 && hex.length() != 9)) {
+            throw new IllegalArgumentException("颜色格式不正确: " + hex);
+        }
+
+        if (hex.startsWith("#")) {
+            hex = hex.substring(1);
+        }
+
+        try {
+            int r = Integer.parseInt(hex.substring(0, 2), 16);
+            int g = Integer.parseInt(hex.substring(2, 4), 16);
+            int b = Integer.parseInt(hex.substring(4, 6), 16);
+
+            if (hex.length() == 8) {
+                int a = Integer.parseInt(hex.substring(6, 8), 16);
+                return new Color(r, g, b, a);
+            }
+
+            return new Color(r, g, b);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("颜色值解析错误: " + hex, e);
+        }
     }
 
     public String createCaptcha() {
@@ -138,11 +191,17 @@ public class Captcha {
         Graphics2D g = bi.createGraphics();
 
         try {
-            g.setColor(this.backgroundColor);
+            if (this.backgroundGradient) {
+                GradientPaint paint = this.backgroundGradientType.createGradientPaint(width, height, background1, background2);
+                g.setPaint(paint);
+            } else {
+                g.setColor(this.backgroundColor);
+            }
             g.fillRect(0, 0, width, height);
+
             g.setFont(this.font);
             if (this.useGradient) {
-                gradientPaint = Objects.requireNonNullElse(gradientPaint, new GradientPaint(0, 0, gradientStart, width, height, gradientEnd));
+                gradientPaint = Objects.requireNonNullElse(gradientPaint, this.textGradientType.createGradientPaint(width, height, gradientStart, getGradientEnd()));
                 g.setPaint(gradientPaint);
             } else {
                 g.setColor(this.textColor);
@@ -187,6 +246,19 @@ public class Captcha {
         }
         this.currentCode = code;
         return code;
+    }
+
+    public enum GradientType {
+        HORIZONTAL, VERTICAL, DIAGONAL, ANTI_DIAGONAL;
+
+        public GradientPaint createGradientPaint(int width, int height, Color from, Color to) {
+            return switch (this) {
+                case HORIZONTAL -> new GradientPaint(0, 0, from, width, 0, to);
+                case VERTICAL -> new GradientPaint(0, 0, from, 0, height, to);
+                case DIAGONAL -> new GradientPaint(0, 0, from, width, height, to);
+                case ANTI_DIAGONAL -> new GradientPaint(0, height, from, width, 0, to);
+            };
+        }
     }
 
     public String write(OutputStream outputStream) {
@@ -351,5 +423,19 @@ public class Captcha {
     void setGradientPaint(GradientPaint gradientPaint) {
         this.useGradient = true;
         this.gradientPaint = gradientPaint;
+    }
+
+    void backgroundGradient(Color background1, Color background2) {
+        this.backgroundGradient = true;
+        this.background1 = background1;
+        this.background2 = background2;
+    }
+
+    void setBackgroundGradientType(GradientType backgroundGradientType) {
+        this.backgroundGradientType = backgroundGradientType;
+    }
+
+    void setTextGradientType(GradientType textGradientType) {
+        this.textGradientType = textGradientType;
     }
 }
