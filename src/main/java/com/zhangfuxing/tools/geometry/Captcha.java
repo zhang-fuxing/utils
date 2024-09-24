@@ -189,6 +189,11 @@ public class Captcha {
         return code;
     }
 
+    public String write(OutputStream outputStream) {
+        setOutputStream(outputStream);
+        return createCaptcha();
+    }
+
     public boolean verify(String code) {
         if (this.currentCode == null) return false;
         return this.currentCode.equalsIgnoreCase(code);
