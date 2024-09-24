@@ -98,27 +98,27 @@ public class Captcha {
     private String currentCode;
 
     Captcha() {
-        this.width = 550;
-        this.height = 300;
+        this.width = 400;
+        this.height = 200;
         this.content = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
         this.length = 4;
         this.textColor = Color.BLACK;
         this.backgroundColor = Color.WHITE;
-        this.lineCount = 30;
+        this.lineCount = 50;
         this.lineWidth = 1.5F;
         this.font = new Font("Arial", Font.ITALIC, 150);
-        this.contentX = height / 4;
-        this.contentY = height - height / 3;
+        this.contentX = 0;
+        this.contentY = 150;
         this.pointCount = 100;
-        this.pointSize = 5;
+        this.pointSize = 20;
+        this.gradientStart = new Color(93, 178, 215);
+        this.gradientEnd = new Color(33, 5, 66);
+        this.useGradient = false;
         try {
             this.outputStream = new FileOutputStream("captcha.png");
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-        this.gradientStart = new Color(194, 239, 57);
-        this.gradientEnd = new Color(48, 174, 211);
-        this.useGradient = false;
     }
 
     public static CaptchaBuilder builder() {
