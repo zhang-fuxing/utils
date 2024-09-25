@@ -11,6 +11,8 @@ import java.util.Objects;
 import java.util.Random;
 
 /**
+ * 生成验证码图片的类，可自定义字体 颜色 背景等；该验证图片只能生成简单的图片验证码，复杂验证请自行更换其他库
+ *
  * @author 张福兴
  * @version 1.0
  * @date 2024/9/24

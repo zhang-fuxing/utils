@@ -1,6 +1,9 @@
 package com.zhangfuxing.tools.classutil;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 /**
  * @author zhangfx
@@ -100,5 +103,19 @@ public class ClassUtil {
             return false;
         }
         return isPrimitive(clazz) || isPrimitiveWrapper(clazz);
+    }
+
+    public static URLClassLoader loadJar(String... jarPaths) {
+        try {
+            URL[] loadUrls = new URL[jarPaths.length];
+            for (int i = 0, jarPathsLength = jarPaths.length; i < jarPathsLength; i++) {
+                String jarPath = jarPaths[i];
+                URL url = new URL("jar:file:" + jarPath + "!/");
+                loadUrls[i] = url;
+            }
+            return new URLClassLoader(loadUrls);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
