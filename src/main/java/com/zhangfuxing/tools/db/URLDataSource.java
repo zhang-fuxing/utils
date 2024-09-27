@@ -20,6 +20,7 @@ public class URLDataSource extends DruidDataSource {
         loadJar();
     }
 
+
     public URLDataSource(String driverClassName, String url, String username, String password, String[] jarPaths) {
         super();
         this.jarPaths = jarPaths;
@@ -77,7 +78,7 @@ public class URLDataSource extends DruidDataSource {
             return this;
         }
 
-        public Builder setJarPaths(String[] jarPaths) {
+        public Builder setJarPaths(String... jarPaths) {
             this.jarPaths = jarPaths;
             return this;
         }

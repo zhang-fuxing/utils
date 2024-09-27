@@ -7,9 +7,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.time.*;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 /**
  * @author 张福兴
@@ -18,6 +20,61 @@ import java.util.*;
  * @email zhangfuxing1010@163.com
  */
 public class ResultSetUtil {
+
+    public static void iterate(ResultSet resultSet, BiConsumer<ResultSetMetaData, Integer> consumer) {
+        try {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            while (resultSet.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    if (consumer != null) {
+                        consumer.accept(metaData, i);
+                    } else {
+                        String columnName = metaData.getColumnName(i);
+                        Object object = resultSet.getObject(columnName);
+                        System.out.printf("Column %s: %s\n", columnName, object);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void iterateFirst(ResultSet resultSet, BiConsumer<ResultSetMetaData, Integer> consumer) {
+        try {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            if (resultSet.next() && columnCount > 0) {
+                for (int i = 1; i <= columnCount; i++) {
+                    if (consumer != null) {
+                        consumer.accept(metaData, i);
+                    } else {
+                        String columnTypeName = metaData.getColumnTypeName(i);
+                        String columnClassName = metaData.getColumnClassName(i);
+                        String columnName = metaData.getColumnName(i);
+                        Object object = resultSet.getObject(columnName);
+                        System.out.printf("Column %s: %s; Type: %s,Class: %s\n", columnName, object, columnTypeName, columnClassName);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public static long count(ResultSet rs) throws SQLException {
+        try {
+            boolean next = rs.next();
+            if (next) {
+                return rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return 0L;
+    }
 
     public static <T> List<T> toList(ResultSet rs, Class<T> clazz) {
         List<T> list = new ArrayList<T>();
