@@ -20,7 +20,7 @@ public class SHA1Util {
 	}
 	
 	private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
-	private static String toString(byte[] bytes) {
+	public static String toString(byte[] bytes) {
 		int len = bytes.length;
 		StringBuilder buf = new StringBuilder(len * 2);
 		// 把密文转换成十六进制的字符串形式
