@@ -536,10 +536,11 @@ public class Str {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }
+
     public static String byteToHex(Byte[] byteArray) {
         StringBuilder result = new StringBuilder("0x");
         for (byte b : byteArray) {
@@ -547,12 +548,64 @@ public class Str {
         }
         return result.toString();
     }
+
     public static String byteToHex(byte[] byteArray) {
         StringBuilder result = new StringBuilder("0x");
         for (byte b : byteArray) {
             result.append(String.format("%02X", b & 0xFF));
         }
         return result.toString();
+    }
+
+
+    public static String toLowerCamelCase(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+
+        // 去除字符串两端的空格
+        input = input.trim();
+
+        // 使用StringBuilder来高效地构建字符串
+        StringBuilder camelCaseString = new StringBuilder();
+        boolean capitalizeNext = false;
+
+        // 遍历输入字符串的每个字符
+        for (int i = 0; i < input.length(); i++) {
+            char currentChar = input.charAt(i);
+
+            // 如果当前字符是分隔符（这里假设空格、下划线等均为分隔符）
+            // 或者这是字符串的第一个字符但不是小写（因为需要特殊处理全大写的情况）
+            if (Character.isWhitespace(currentChar) || currentChar == '_' || (i == 0 && Character.isUpperCase(currentChar))) {
+                capitalizeNext = true;
+
+                // 如果是分隔符，则跳过它
+                if (Character.isWhitespace(currentChar) || currentChar == '_') {
+                    continue;
+                }
+            }
+
+            // 根据capitalizeNext的值来决定是否大写当前字符
+            if (capitalizeNext) {
+                camelCaseString.append(Character.toUpperCase(currentChar));
+                capitalizeNext = false; // 重置标记
+            } else {
+                // 如果不是第一个字符且需要小写（对于全大写字符串的第一个字符后的处理）
+                if (i > 0) {
+                    camelCaseString.append(Character.toLowerCase(currentChar));
+                } else {
+                    // 第一个字符直接添加（此时为小写，因为全大写情况会在后续被处理）
+                    camelCaseString.append(currentChar);
+                }
+            }
+        }
+
+        // 如果输入字符串全是大写，并且没有分隔符，我们需要将第一个字符转为小写
+        if (camelCaseString.length() > 1 && camelCaseString.charAt(0) == camelCaseString.toString().toUpperCase().charAt(0)) {
+            camelCaseString.setCharAt(0, Character.toLowerCase(camelCaseString.charAt(0)));
+        }
+
+        return camelCaseString.toString();
     }
 
 }

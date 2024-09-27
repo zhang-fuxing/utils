@@ -20,6 +20,7 @@ import java.util.function.BiConsumer;
  * @date 2024/9/27
  * @email zhangfuxing1010@163.com
  */
+@SuppressWarnings("DuplicatedCode")
 public class ResultSetUtil {
 
     public static void iterate(ResultSet resultSet, BiConsumer<ResultSetMetaData, Integer> consumer) {
@@ -200,6 +201,27 @@ public class ResultSetUtil {
         }
         if (id0 != null) {
             result = name;
+        }
+        return result;
+    }
+
+    public static List<Map<String, Object>> toMap(ResultSet resultSet) {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        try {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            while (resultSet.next()) {
+                Map<String, Object> map = new HashMap<>();
+                for (int i = 1; i <= columnCount; i++) {
+                    String columnName = metaData.getColumnName(i);
+                    Object value = resultSet.getObject(i);
+                    map.put(columnName, value);
+                }
+                result.add(map);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
         return result;
     }
