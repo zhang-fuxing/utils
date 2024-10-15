@@ -557,55 +557,63 @@ public class Str {
         return result.toString();
     }
 
+    public static String toLowerCamel(String input) {
+        return toLowerCamel(input, "_");
+    }
 
-    public static String toLowerCamelCase(String input) {
+    public static String toUpperCamel(String input) {
+        return toUpperCamel(input, "_");
+    }
+
+    public static String toLowerCamel(String input, String separator) {
         if (input == null || input.isEmpty()) {
             return input;
         }
+        String split = Objects.requireNonNullElse(separator, "_");
 
-        // 去除字符串两端的空格
-        input = input.trim();
+        char[] charSets = input.trim().toCharArray();
+        StringBuilder stringBuilder = new StringBuilder();
+        char firstChar = charSets[0];
+        stringBuilder.append(Character.toLowerCase(firstChar));
+        buildString(charSets, split, stringBuilder);
 
-        // 使用StringBuilder来高效地构建字符串
-        StringBuilder camelCaseString = new StringBuilder();
-        boolean capitalizeNext = false;
+        return stringBuilder.toString();
+    }
 
-        // 遍历输入字符串的每个字符
-        for (int i = 0; i < input.length(); i++) {
-            char currentChar = input.charAt(i);
+    public static String toUpperCamel(String input, String separator) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        String split = Objects.requireNonNullElse(separator, "_");
 
-            // 如果当前字符是分隔符（这里假设空格、下划线等均为分隔符）
-            // 或者这是字符串的第一个字符但不是小写（因为需要特殊处理全大写的情况）
-            if (Character.isWhitespace(currentChar) || currentChar == '_' || (i == 0 && Character.isUpperCase(currentChar))) {
-                capitalizeNext = true;
+        char[] charSets = input.trim().toCharArray();
+        StringBuilder stringBuilder = new StringBuilder();
+        char firstChar = charSets[0];
+        stringBuilder.append(Character.toUpperCase(firstChar));
+        buildString(charSets, split, stringBuilder);
 
-                // 如果是分隔符，则跳过它
-                if (Character.isWhitespace(currentChar) || currentChar == '_') {
-                    continue;
+        return stringBuilder.toString();
+    }
+
+    private static void buildString(char[] charSets, String split, StringBuilder stringBuilder) {
+        if (charSets.length == 1) {
+            return;
+        }
+        for (int i = 1; i < charSets.length; i++) {
+            char charSet = charSets[i];
+            if (split.equals(String.valueOf(charSet))) {
+                i = i + 1;
+                if (i >= charSets.length) {
+                    break;
                 }
-            }
+                charSet = charSets[i];
+                charSet = Character.toUpperCase(charSet);
 
-            // 根据capitalizeNext的值来决定是否大写当前字符
-            if (capitalizeNext) {
-                camelCaseString.append(Character.toUpperCase(currentChar));
-                capitalizeNext = false; // 重置标记
             } else {
-                // 如果不是第一个字符且需要小写（对于全大写字符串的第一个字符后的处理）
-                if (i > 0) {
-                    camelCaseString.append(Character.toLowerCase(currentChar));
-                } else {
-                    // 第一个字符直接添加（此时为小写，因为全大写情况会在后续被处理）
-                    camelCaseString.append(currentChar);
-                }
+                charSet = Character.toLowerCase(charSet);
             }
+            stringBuilder.append(charSet);
         }
-
-        // 如果输入字符串全是大写，并且没有分隔符，我们需要将第一个字符转为小写
-        if (camelCaseString.length() > 1 && camelCaseString.charAt(0) == camelCaseString.toString().toUpperCase().charAt(0)) {
-            camelCaseString.setCharAt(0, Character.toLowerCase(camelCaseString.charAt(0)));
-        }
-
-        return camelCaseString.toString();
     }
 
 }

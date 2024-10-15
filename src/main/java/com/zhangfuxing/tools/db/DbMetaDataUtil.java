@@ -3,12 +3,10 @@ package com.zhangfuxing.tools.db;
 import com.zhangfuxing.tools.db.javax.ResultSetUtil;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author 张福兴
@@ -18,26 +16,24 @@ import java.util.Map;
  */
 public class DbMetaDataUtil {
 
-    public static TableMetaData getTableMetaData(DataSource dataSource, String schema, String tableName) {
-        try (Connection connection = dataSource.getConnection()) {
-            return getTableMetaData(connection, schema, tableName);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-    public static TableMetaData getTableMetaData(Connection connection, String schema, String tableName) {
-        try {
-            var dbMetaData = connection.getMetaData();
-            ResultSet tables = dbMetaData.getTables(null, schema, tableName, new String[]{"TABLE"});
-            List<TableMetaData> tableMetaDataList = ResultSetUtil.toList(tables, TableMetaData.class);
+    public static Map<String, Object> getTableMetaData(final DataSource dataSource, final String schema, final String tableName, boolean containView) {
+        Objects.requireNonNull(dataSource);
+        Objects.requireNonNull(tableName);
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            ResultSet tables = metaData.getTables(null, schema, tableName, containView ? new String[]{"TABLE", "VIEW"} : new String[]{"TABLE"});
+            var tableMetaData = ResultSetUtil.toTableMetaData(tables);
             tables.close();
-            TableMetaData tableMetaData = tableMetaDataList.get(0);
-            ResultSet columns = dbMetaData.getColumns(null, schema, tableName, null);
-            List<ColumnMetaData> columnMetaDataList = ResultSetUtil.toList(columns, ColumnMetaData.class);
+            if (tableMetaData.isEmpty()) {
+                return null;
+            }
+            var result = tableMetaData.get(0);
+            ResultSet columns = metaData.getColumns(null, schema, tableName, null);
+            var columnMetaData = ResultSetUtil.toColumnMetaData(columns);
             columns.close();
-            tableMetaData.setColumnMetaData(columnMetaDataList);
-            return tableMetaData;
+            result.put("COLUMN_META_DATA", columnMetaData);
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

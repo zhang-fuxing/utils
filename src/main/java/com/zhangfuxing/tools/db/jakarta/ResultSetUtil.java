@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.time.*;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * @author 张福兴
@@ -75,7 +76,7 @@ public class ResultSetUtil {
         return 0L;
     }
 
-    public static <T> List<T> toList(ResultSet rs, Class<T> clazz) {
+    public static <T> List<T> toList(ResultSet rs, Class<T> clazz, boolean useIndex) {
         List<T> list = new ArrayList<T>();
         if (rs == null) {
             return new ArrayList<T>();
@@ -93,29 +94,78 @@ public class ResultSetUtil {
         List<Field> fieldList = Arrays.stream(clazz.getDeclaredFields())
                 .filter(field -> {
                     field.setAccessible(true);
-                    boolean jakartaColumn = field.isAnnotationPresent(Column.class);
-                    boolean jakartaId = field.isAnnotationPresent(Id.class);
-                    return jakartaColumn || jakartaId;
+                    boolean javaxColumn = field.isAnnotationPresent(javax.persistence.Column.class);
+                    boolean javaxId = field.isAnnotationPresent(javax.persistence.Id.class);
+                    return javaxColumn || javaxId;
                 })
                 .toList();
         if (fieldList.isEmpty()) {
             return list;
         }
-
+        Map<String, Field> fieldMap = fieldList.stream().collect(Collectors.toMap(Field::getName, f -> f));
         try {
+            ResultSetMetaData metaData = rs.getMetaData();
             while (rs.next()) {
                 T obj = constructor.newInstance();
-                for (Field field : fieldList) {
-                    set(rs, obj, field);
+                if (!useIndex) {
+                    for (Field field : fieldList) {
+                        set(rs, obj, field);
+                    }
+                } else {
+                    int columnCount = metaData.getColumnCount();
+                    for (int i = 1; i <= columnCount; i++) {
+                        String columnName = metaData.getColumnName(i);
+                        Field field = fieldMap.get(columnName);
+                        if (field == null) {
+                            continue;
+                        }
+                        set(rs, i, obj, field);
+                    }
                 }
+
                 list.add(obj);
             }
         } catch (SQLException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
 
-
         return list;
+    }
+
+    private static <T> void set(ResultSet rs, int index, T obj, Field field) {
+        String simpleName = field.getType().getSimpleName();
+        try {
+            switch (simpleName.toLowerCase()) {
+                case "int", "integer" -> field.set(obj, rs.getInt(index));
+                case "long" -> field.set(obj, rs.getLong(index));
+                case "float" -> field.set(obj, rs.getFloat(index));
+                case "double" -> field.set(obj, rs.getDouble(index));
+                case "boolean" -> field.set(obj, rs.getBoolean(index));
+                case "byte" -> field.set(obj, rs.getByte(index));
+                case "short" -> field.set(obj, rs.getShort(index));
+                case "char", "character", "string" -> field.set(obj, rs.getString(index));
+                case "bigdecimal" -> field.set(obj, rs.getBigDecimal(index));
+                case "byte[]" -> field.set(obj, rs.getBytes(index));
+                // 日期数据转换
+                case "date", "time", "timestamp" -> field.set(obj, rs.getTimestamp(index));
+                case "localdate" -> field.set(obj, toLocalDate(rs.getTimestamp(index)));
+                case "localtime" -> field.set(obj, toLocalTime(rs.getTimestamp(index)));
+                case "localdatetime" -> field.set(obj, toLocalDateTime(rs.getTimestamp(index)));
+                case "inputstream" -> field.set(obj, rs.getBinaryStream(index));
+                case "ref" -> field.set(obj, rs.getRef(index));
+                case "blob" -> field.set(obj, rs.getBlob(index));
+                case "clob" -> field.set(obj, rs.getClob(index));
+                case "array" -> field.set(obj, rs.getArray(index));
+                case "url" -> field.set(obj, rs.getURL(index));
+                case "rowid" -> field.set(obj, rs.getRowId(index));
+                case "nclob" -> field.set(obj, rs.getNClob(index));
+                case "sqlxml" -> field.set(obj, rs.getSQLXML(index));
+                default -> {
+                }
+            }
+        } catch (IllegalAccessException | SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static <T> void set(ResultSet rs, T obj, Field field) {
@@ -225,4 +275,5 @@ public class ResultSetUtil {
         }
         return result;
     }
+
 }
