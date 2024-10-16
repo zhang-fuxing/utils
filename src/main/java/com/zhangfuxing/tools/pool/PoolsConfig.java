@@ -11,6 +11,7 @@ import java.time.Duration;
  * @email zhangfuxing1010@163.com
  */
 public class PoolsConfig<T> extends GenericObjectPoolConfig<T> {
+
     public PoolsConfig() {
         setTestWhileIdle(true);
         setTimeBetweenEvictionRuns(Duration.ofMillis(30000));

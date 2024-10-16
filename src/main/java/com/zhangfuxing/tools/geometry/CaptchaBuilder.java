@@ -4,6 +4,8 @@ import java.awt.*;
 import java.io.OutputStream;
 
 /**
+ * 构造验证码对象的构造类
+ *
  * @author 张福兴
  * @version 1.0
  * @date 2024/9/24

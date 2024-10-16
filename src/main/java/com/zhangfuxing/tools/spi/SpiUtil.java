@@ -5,6 +5,8 @@ import com.zhangfuxing.tools.classutil.ClassUtil;
 import java.util.*;
 
 /**
+ * 基于jdk的服务发现工具类封装，用于加载符合jdk的服务提供类
+ *
  * @author 张福兴
  * @version 1.0
  * @date 2024/8/1
@@ -40,13 +42,13 @@ public class SpiUtil {
     }
 
     public static <T> Collection<T> loadAll(Class<T> clazz) {
-        return loadAll(clazz, new ArrayList<>());
+        return loadAll(clazz, clazz.getClassLoader());
     }
 
-    public static <T> Collection<T> loadAll(Class<T> clazz, Collection<T> collection) {
+    public static <T> Collection<T> loadAll(Class<T> clazz, ClassLoader classLoader) {
         Objects.requireNonNull(clazz);
-        collection = Objects.requireNonNullElse(collection, new ArrayList<>());
-        ServiceLoader<T> serviceLoader = loadService(clazz, clazz.getClassLoader());
+        Collection<T> collection = new ArrayList<>();
+        ServiceLoader<T> serviceLoader = loadService(clazz, classLoader);
         Iterator<T> iterator = serviceLoader.iterator();
         while (iterator.hasNext()) {
             try {

@@ -1,14 +1,7 @@
 ## 简单工具类封装
 
-## 脚本
-```shell
-mvn wrapper:wrapper -Dtype=source
-```
+### 项目安装
 
 ```shell
-./mvnw -v
-```
-
-```shell
-./mvnw clean
+mvn install
 ```
