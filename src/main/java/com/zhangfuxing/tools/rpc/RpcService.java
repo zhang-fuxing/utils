@@ -6,6 +6,8 @@ import com.zhangfuxing.tools.rpc.anno.RpcParam;
 
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,7 +49,7 @@ public class RpcService {
                 RpcParam annotation = parameter.getAnnotation(RpcParam.class);
                 if (annotation != null) {
                     String paraName = annotation.value();
-                    urlParams.add(paraName + "=" + args[i]);
+                    urlParams.add(paraName + "=" + URLEncoder.encode(String.valueOf(args[i]), StandardCharsets.UTF_8));
                 }
             }
             if (!urlParams.toString().isBlank()) {
