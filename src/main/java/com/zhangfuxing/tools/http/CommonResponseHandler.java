@@ -12,11 +12,7 @@ import java.nio.charset.StandardCharsets;
  * @date 2024/1/4
  * @email zhangfuxing@kingshine.com.cn
  */
-public class CommonHandler {
-    /**
-     * 字符串处理器
-     */
-    public static final HttpResponse.BodyHandler<String> STRING = HttpResponse.BodyHandlers.ofString();
+public class CommonResponseHandler {
     /**
      * utf-8编码的字符串处理器
      */
@@ -33,4 +29,18 @@ public class CommonHandler {
      * 丢弃响应体的处理器
      */
     public static final HttpResponse.BodyHandler<Void> DISCARDING = HttpResponse.BodyHandlers.discarding();
+
+    @SuppressWarnings("unchecked")
+    public static <T> HttpResponse.BodyHandler<T> of(Class<T> clazz) {
+        if (clazz == String.class) {
+            return (HttpResponse.BodyHandler<T>) STRING_UTF8;
+        } else if (clazz == InputStream.class) {
+            return (HttpResponse.BodyHandler<T>) INPUT_STREAM;
+        } else if (clazz == byte[].class) {
+            return (HttpResponse.BodyHandler<T>) BYTES;
+        } else if (clazz == Void.class) {
+            return (HttpResponse.BodyHandler<T>) DISCARDING;
+        }
+        return (HttpResponse.BodyHandler<T>) DISCARDING;
+    }
 }

@@ -68,4 +68,7 @@ public class HttpClientUtil {
         return HttpBuilder.client();
     }
 
+    public static HttpRequestBuilder request() {
+        return client().request();
+    }
 }
