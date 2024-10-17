@@ -38,8 +38,10 @@ public class RpcInvocationHandler implements InvocationHandler {
                 .orElse("");
         RpcMapping rpcMapping = method.getAnnotation(RpcMapping.class);
         uri = uri + rpcMapping.value();
+        RpcHeader rpcHeaders = null;
         StringJoiner urlParams = new StringJoiner("&");
         HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.noBody();
+        Map<String, String> cookieHead = null;
         for (int i = 0; i < method.getParameters().length; i++) {
             Parameter parameter = method.getParameters()[i];
             Object arg = args[i];
@@ -80,6 +82,12 @@ public class RpcInvocationHandler implements InvocationHandler {
                     case NONE -> bodyPublisher = HttpRequest.BodyPublishers.noBody();
                 }
             }
+            if (arg instanceof RpcCookie cookies) {
+                cookieHead = cookies.getCookies();
+            }
+            if (arg instanceof RpcHeader rpcHeader) {
+                rpcHeaders = rpcHeader;
+            }
         }
         if (!urlParams.toString().isBlank()) {
             uri = uri + "?" + urlParams;
@@ -93,10 +101,20 @@ public class RpcInvocationHandler implements InvocationHandler {
                 .url(target)
                 .method(rpcMapping.method().name(), bodyPublisher);
         for (String header : rpcMapping.headers()) {
-            if (header != null && header.contains("=")) {
-                String[] split = header.split("=");
+            if (header != null && header.contains(":")) {
+                String[] split = header.split(":");
                 builder.header(split[0], split[1]);
             }
+        }
+        if (cookieHead != null) {
+            StringJoiner joiner = new StringJoiner("; ");
+            for (Map.Entry<String, String> entry : cookieHead.entrySet()) {
+                joiner.add(entry.getKey() + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+            }
+            builder.header(RpcCookie.COOKIE, joiner.toString());
+        }
+        if (rpcHeaders != null) {
+            rpcHeaders.getHeader().forEach(builder::header);
         }
         Class<?> returnType = rpcMapping.responseType();
         HttpResponse.BodyHandler<?> bodyHandler = CommonResponseHandler.of(returnType);

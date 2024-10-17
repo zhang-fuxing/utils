@@ -22,7 +22,7 @@ public @interface RpcMapping {
 
     Method method() default GET;
 
-    String[] headers() default {};
+    String[] headers() default {"Content-Type: application/json"};
 
     Class<?> responseType() default String.class;
 }

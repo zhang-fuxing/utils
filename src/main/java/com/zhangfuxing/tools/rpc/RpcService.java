@@ -25,16 +25,18 @@ public class RpcService {
         if (serviceCache.containsKey(clazz)) {
             return (T) serviceCache.get(clazz);
         }
-        if (!clazz.isAnnotationPresent(RpcClient.class)) {
-            throw new IllegalArgumentException("指定类不是远程调用客户端，请添加 @RpcClient 到目标类上");
+        synchronized (RpcService.class) {
+            if (!clazz.isAnnotationPresent(RpcClient.class)) {
+                throw new IllegalArgumentException("指定类不是远程调用客户端，请添加 @RpcClient 到目标类上");
+            }
+            RpcClient rpcClient = clazz.getAnnotation(RpcClient.class);
+            var handler = new RpcInvocationHandler();
+            handler.setBasURL(Objects.requireNonNullElse(schema, rpcClient.schema()) + "://" +
+                              Objects.requireNonNullElse(hostAndPort, rpcClient.host() + ":" + rpcClient.port()));
+            T serviceInstance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, handler);
+            serviceCache.put(clazz, serviceInstance);
+            return serviceInstance;
         }
-        RpcClient rpcClient = clazz.getAnnotation(RpcClient.class);
-        var handler = new RpcInvocationHandler();
-        handler.setBasURL(Objects.requireNonNullElse(schema, rpcClient.schema()) + "://" +
-                          Objects.requireNonNullElse(hostAndPort, rpcClient.host() + ":" + rpcClient.port()));
-        T serviceInstance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, handler);
-        serviceCache.put(clazz, serviceInstance);
-        return serviceInstance;
     }
 
     public static <T> T resetService(Class<T> clazz) {
