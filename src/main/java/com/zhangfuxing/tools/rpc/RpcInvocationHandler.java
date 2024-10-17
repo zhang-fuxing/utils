@@ -26,7 +26,6 @@ import java.util.StringJoiner;
  * @date 2024/10/17
  * @email zhangfuxing1010@163.com
  */
-@SuppressWarnings("SuspiciousInvocationHandlerImplementation")
 public class RpcInvocationHandler implements InvocationHandler {
     private String basURL;
 
