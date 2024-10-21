@@ -36,6 +36,10 @@ public class RpcInvocationHandler implements InvocationHandler {
                 .map(RpcMapping::value)
                 .orElse("");
         RpcMapping rpcMapping = method.getAnnotation(RpcMapping.class);
+
+        Class<?> returnType = rpcMapping.responseType();
+        HttpResponse.BodyHandler<?> bodyHandler = CommonResponseHandler.of(returnType);
+
         uri = uri + rpcMapping.value();
         RpcHeader rpcHeaders = null;
         StringJoiner urlParams = new StringJoiner("&");
@@ -87,6 +91,12 @@ public class RpcInvocationHandler implements InvocationHandler {
             if (arg instanceof RpcHeader rpcHeader) {
                 rpcHeaders = rpcHeader;
             }
+            if (arg instanceof HttpRequest.BodyPublisher argBodyPublisher) {
+                bodyPublisher = argBodyPublisher;
+            }
+            if (arg instanceof HttpResponse.BodyHandler<?> responseBodyHandler) {
+                bodyHandler = responseBodyHandler;
+            }
         }
         if (!urlParams.toString().isBlank()) {
             uri = uri + "?" + urlParams;
@@ -115,8 +125,7 @@ public class RpcInvocationHandler implements InvocationHandler {
         if (rpcHeaders != null) {
             rpcHeaders.getHeader().forEach(builder::header);
         }
-        Class<?> returnType = rpcMapping.responseType();
-        HttpResponse.BodyHandler<?> bodyHandler = CommonResponseHandler.of(returnType);
+
         return builder.response(bodyHandler);
     }
 
