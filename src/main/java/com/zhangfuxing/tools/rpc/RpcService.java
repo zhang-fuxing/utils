@@ -29,14 +29,25 @@ public class RpcService {
             if (!clazz.isAnnotationPresent(RpcClient.class)) {
                 throw new IllegalArgumentException("指定类不是远程调用客户端，请添加 @RpcClient 到目标类上");
             }
-            RpcClient rpcClient = clazz.getAnnotation(RpcClient.class);
-            var handler = new RpcInvocationHandler();
-            handler.setBasURL(Objects.requireNonNullElse(schema, rpcClient.schema()) + "://" +
-                              Objects.requireNonNullElse(hostAndPort, rpcClient.host() + ":" + rpcClient.port()));
+            var handler = getRpcInvocationHandler(clazz, schema, hostAndPort);
             T serviceInstance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, handler);
             serviceCache.put(clazz, serviceInstance);
             return serviceInstance;
         }
+    }
+
+    private static <T> RpcInvocationHandler getRpcInvocationHandler(Class<T> clazz, String schema, String hostAndPort) {
+        RpcClient rpcClient = clazz.getAnnotation(RpcClient.class);
+        var handler = new RpcInvocationHandler();
+        String basURL;
+        if (!rpcClient.domain().isBlank()) {
+            basURL = rpcClient.domain();
+        } else {
+            basURL = Objects.requireNonNullElse(schema, rpcClient.schema()) + "://" +
+                     Objects.requireNonNullElse(hostAndPort, rpcClient.host() + ":" + rpcClient.port());
+        }
+        handler.setBasURL(basURL);
+        return handler;
     }
 
     public static <T> T resetService(Class<T> clazz) {

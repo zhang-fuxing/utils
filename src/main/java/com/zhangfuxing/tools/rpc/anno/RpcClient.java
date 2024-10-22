@@ -19,4 +19,6 @@ public @interface RpcClient {
     String host() default "127.0.0.1";
 
     int port() default 80;
+
+    String domain() default "";
 }

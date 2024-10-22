@@ -8,9 +8,8 @@ import com.zhangfuxing.tools.rpc.anno.RpcMapping;
 import com.zhangfuxing.tools.rpc.anno.RpcParam;
 
 import java.io.InputStream;
-import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.*;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -37,7 +36,15 @@ public class RpcInvocationHandler implements InvocationHandler {
                 .orElse("");
         RpcMapping rpcMapping = method.getAnnotation(RpcMapping.class);
 
-        Class<?> returnType = rpcMapping.responseType();
+        Class<?> returnType = method.getReturnType();
+        Type type = method.getGenericReturnType();
+        if (type instanceof ParameterizedType pt) {
+            Type argsType = pt.getActualTypeArguments()[0];
+            Class<?> argsClass = Class.forName(argsType.getTypeName());
+            if (returnType != argsClass) {
+                returnType = argsClass;
+            }
+        }
         HttpResponse.BodyHandler<?> bodyHandler = CommonResponseHandler.of(returnType);
 
         uri = uri + rpcMapping.value();
@@ -101,7 +108,7 @@ public class RpcInvocationHandler implements InvocationHandler {
         if (!urlParams.toString().isBlank()) {
             uri = uri + "?" + urlParams;
         }
-        if (method.getReturnType() == Void.TYPE) {
+        if (returnType == Void.TYPE) {
             return null;
         }
         var target = this.basURL + uri;

@@ -1,5 +1,8 @@
 package com.zhangfuxing.tools.http;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -41,6 +44,8 @@ public class CommonResponseHandler {
         } else if (clazz == Void.class) {
             return (HttpResponse.BodyHandler<T>) DISCARDING;
         }
+        Logger logger = LoggerFactory.getLogger(CommonResponseHandler.class);
+        logger.warn("不支持自动解析 {} 类型响应, 将丢弃响应体,请添加参数 HttpResponse.BodyHandler<?> 到接口中", clazz.getName());
         return (HttpResponse.BodyHandler<T>) DISCARDING;
     }
 }
