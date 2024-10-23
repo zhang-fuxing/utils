@@ -27,7 +27,6 @@ import java.util.StringJoiner;
  */
 public class RpcInvocationHandler implements InvocationHandler {
     private String basURL;
-
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Class<?> declaringClass = method.getDeclaringClass();
@@ -143,4 +142,5 @@ public class RpcInvocationHandler implements InvocationHandler {
     public void setBasURL(String basURL) {
         this.basURL = basURL;
     }
+
 }

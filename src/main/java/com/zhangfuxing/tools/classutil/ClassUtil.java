@@ -1,6 +1,6 @@
 package com.zhangfuxing.tools.classutil;
 
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -118,4 +118,56 @@ public class ClassUtil {
             throw new RuntimeException(e);
         }
     }
+
+    public static Class<?> getClass(Type type) {
+        if (null != type) {
+            if (type instanceof Class) {
+                return (Class<?>) type;
+            } else if (type instanceof ParameterizedType) {
+                return (Class<?>) ((ParameterizedType) type).getRawType();
+            } else if (type instanceof TypeVariable) {
+                Type[] bounds = ((TypeVariable<?>) type).getBounds();
+                if (bounds.length == 1) {
+                    return getClass(bounds[0]);
+                }
+            } else if (type instanceof WildcardType) {
+                final Type[] upperBounds = ((WildcardType) type).getUpperBounds();
+                if (upperBounds.length == 1) {
+                    return getClass(upperBounds[0]);
+                }
+            }
+        }
+        return null;
+    }
+
+    public static Class<?> getGenericClass(Type type) {
+        if (type instanceof ParameterizedType parameterizedType) {
+            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+            if (actualTypeArguments.length == 1) {
+                return getClass(actualTypeArguments[0]);
+            }
+        } else if (type instanceof WildcardType) {
+            final Type[] upperBounds = ((WildcardType) type).getUpperBounds();
+            if (upperBounds.length == 1) {
+                return getClass(upperBounds[0]);
+            }
+        } else if (type instanceof TypeVariable) {
+            final Type[] bounds = ((TypeVariable<?>) type).getBounds();
+            if (bounds.length == 1) {
+                return getClass(bounds[0]);
+            }
+        } else if (type instanceof GenericArrayType genericArrayType) {
+            final Type componentType = genericArrayType.getGenericComponentType();
+            if (componentType instanceof ParameterizedType) {
+                final Type[] actualTypeArguments = ((ParameterizedType) componentType).getActualTypeArguments();
+                if (actualTypeArguments.length == 1) {
+                    return getClass(actualTypeArguments[0]);
+                }
+            }
+        } else if (type instanceof Class<?> c) {
+            return c;
+        }
+        return null;
+    }
+
 }
