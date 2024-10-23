@@ -31,7 +31,6 @@ public class RpcService {
             }
             var handler = getRpcInvocationHandler(clazz, schema, hostAndPort);
             T serviceInstance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, handler);
-            handler.setTarget(serviceInstance);
             serviceCache.put(clazz, serviceInstance);
             return serviceInstance;
         }
