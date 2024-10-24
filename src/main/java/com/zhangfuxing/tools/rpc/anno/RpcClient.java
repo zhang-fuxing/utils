@@ -21,4 +21,8 @@ public @interface RpcClient {
     int port() default 80;
 
     String domain() default "";
+
+    String serviceName() default "";
+
+    String[] headers() default {};
 }

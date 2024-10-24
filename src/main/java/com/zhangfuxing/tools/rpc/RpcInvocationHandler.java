@@ -3,7 +3,9 @@ package com.zhangfuxing.tools.rpc;
 import cn.hutool.json.JSONUtil;
 import com.zhangfuxing.tools.http.CommonResponseHandler;
 import com.zhangfuxing.tools.http.HttpClientUtil;
+import com.zhangfuxing.tools.http.HttpRequestBuilder;
 import com.zhangfuxing.tools.rpc.anno.RpcBody;
+import com.zhangfuxing.tools.rpc.anno.RpcClient;
 import com.zhangfuxing.tools.rpc.anno.RpcMapping;
 import com.zhangfuxing.tools.rpc.anno.RpcParam;
 
@@ -30,6 +32,7 @@ public class RpcInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Class<?> declaringClass = method.getDeclaringClass();
+        RpcClient rpcClient = declaringClass.getAnnotation(RpcClient.class);
         String uri = Optional.ofNullable(declaringClass.getAnnotation(RpcMapping.class))
                 .map(RpcMapping::value)
                 .orElse("");
@@ -115,12 +118,8 @@ public class RpcInvocationHandler implements InvocationHandler {
                 .request()
                 .url(target)
                 .method(rpcMapping.method().name(), bodyPublisher);
-        for (String header : rpcMapping.headers()) {
-            if (header != null && header.contains(":")) {
-                String[] split = header.split(":");
-                builder.header(split[0], split[1]);
-            }
-        }
+        addHeaders(rpcMapping.headers(), builder);
+        addHeaders(rpcClient.headers(), builder);
         if (cookieHead != null) {
             StringJoiner joiner = new StringJoiner("; ");
             for (Map.Entry<String, String> entry : cookieHead.entrySet()) {
@@ -135,8 +134,25 @@ public class RpcInvocationHandler implements InvocationHandler {
         return builder.response(bodyHandler);
     }
 
-    public String getBasURL() {
-        return basURL;
+    private static void addHeaders(String[] headers, HttpRequestBuilder builder) {
+        if (headers == null) {
+            return;
+        }
+        for (String header : headers) {
+            if (header != null && contains(header, ":", "=")) {
+                String[] split = header.split("[:=]");
+                builder.header(split[0].trim(), split[1].trim());
+            }
+        }
+    }
+
+    private static boolean contains(String origin, String... chars) {
+        for (String item : chars) {
+            if (origin.contains(item)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setBasURL(String basURL) {
