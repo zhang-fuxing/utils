@@ -25,4 +25,6 @@ public @interface RpcClient {
     String serviceName() default "";
 
     String[] headers() default {};
+
+    long timeout() default -1;
 }

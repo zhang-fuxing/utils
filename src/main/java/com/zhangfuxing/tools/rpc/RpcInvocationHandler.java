@@ -17,6 +17,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -118,6 +119,14 @@ public class RpcInvocationHandler implements InvocationHandler {
                 .request()
                 .url(target)
                 .method(rpcMapping.method().name(), bodyPublisher);
+        // 超时时间设置，优先RpcMapping中的
+        long timeout = rpcMapping.timeout();
+        if (timeout <= 0) {
+            timeout = rpcClient.timeout();
+        }
+        if (timeout > 0) {
+            builder.timeout(Duration.ofMillis(timeout));
+        }
         addHeaders(rpcMapping.headers(), builder);
         addHeaders(rpcClient.headers(), builder);
         if (cookieHead != null) {

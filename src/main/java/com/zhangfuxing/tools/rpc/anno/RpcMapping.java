@@ -23,4 +23,6 @@ public @interface RpcMapping {
     Method method() default GET;
 
     String[] headers() default {"Content-Type: application/json"};
+
+    long timeout() default -1;
 }
