@@ -6,6 +6,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author 张福兴
@@ -53,9 +54,37 @@ public class HttpRequestBuilder {
         return this;
     }
 
+    public HttpRequestBuilder x_www_form_urlencoded() {
+        builderRequest.header("Content-Type", "application/x-www-form-urlencoded");
+        return this;
+    }
+    public HttpRequestBuilder json() {
+        builderRequest.header("Content-Type", "application/json");
+        return this;
+    }
+
+    public HttpRequestBuilder xml() {
+        builderRequest.header("Content-Type", "application/xml");
+        return this;
+    }
+
+    public HttpRequestBuilder plain() {
+        builderRequest.header("Content-Type", "text/plain");
+        return this;
+    }
+
     public HttpRequestBuilder timeout(Duration duration) {
         builderRequest.timeout(duration);
         return this;
+    }
+
+    public HttpRequestBuilder timeout(long timeout, TimeUnit unit) {
+        long millis = unit.toMillis(timeout);
+        return timeout(Duration.ofMillis(millis));
+    }
+
+    public HttpRequestBuilder timeout(long timeout) {
+        return timeout(timeout, TimeUnit.MILLISECONDS);
     }
 
     public HttpRequestBuilder setHeader(String name, String value) {
@@ -109,4 +138,7 @@ public class HttpRequestBuilder {
         return httpClient.send(request, bodyHandler);
     }
 
+    public <T> HttpResponse<T> send(HttpResponse.BodyHandler<T> bodyHandler) throws IOException, InterruptedException {
+        return response(bodyHandler);
+    }
 }

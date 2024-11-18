@@ -3,11 +3,15 @@ package com.zhangfuxing.tools.http;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.StringJoiner;
 
 /**
  * @author 张福兴
@@ -70,5 +74,22 @@ public class HttpClientUtil {
 
     public static HttpRequestBuilder request() {
         return client().request();
+    }
+
+    public static String urlencoded(Map<String, String> map) {
+        if (map == null || map.isEmpty()) {
+            return "";
+        }
+        StringJoiner sj = new StringJoiner("&");
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (value == null) {
+                value = "";
+            }
+            sj.add(key + "=" + URLEncoder.encode(value, StandardCharsets.UTF_8));
+        }
+
+        return sj.toString();
     }
 }
