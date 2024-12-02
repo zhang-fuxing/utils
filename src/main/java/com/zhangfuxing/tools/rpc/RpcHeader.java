@@ -1,6 +1,7 @@
 package com.zhangfuxing.tools.rpc;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -20,4 +21,16 @@ public class RpcHeader {
     public Map<String, String> getHeader() {
         return header;
     }
+
+    public String[] getHeaders() {
+        String[] headers = new String[header.size() * 2];
+        int i = 0;
+        Set<String> keySet = header.keySet();
+        for (String key : keySet) {
+            headers[i++] = key;
+            headers[i++] = header.get(key);
+        }
+        return headers;
+    }
+
 }

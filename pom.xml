@@ -4,7 +4,7 @@
 
     <groupId>com.zhangfuxing.tools</groupId>
     <artifactId>utils</artifactId>
-    <version>0.0.11</version>
+    <version>0.0.12</version>
     <packaging>jar</packaging>
 
     <name>utils</name>
