@@ -104,7 +104,7 @@ public class ResultSetUtil {
         if (fieldList.isEmpty()) {
             return list;
         }
-        Map<String, Field> fieldMap = fieldList.stream().collect(Collectors.toMap(Field::getName, f -> f));
+        Map<String, Field> fieldMap = fieldList.stream().collect(Collectors.toMap(f->f.getName().toUpperCase(), f -> f));
         try {
             ResultSetMetaData metaData = rs.getMetaData();
             while (rs.next()) {
@@ -117,7 +117,7 @@ public class ResultSetUtil {
                     int columnCount = metaData.getColumnCount();
                     for (int i = 1; i <= columnCount; i++) {
                         String columnName = metaData.getColumnName(i);
-                        Field field = fieldMap.get(columnName);
+                        Field field = fieldMap.get(columnName.toUpperCase());
                         if (field == null) {
                             continue;
                         }

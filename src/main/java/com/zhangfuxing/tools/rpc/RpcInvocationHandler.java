@@ -1,5 +1,7 @@
 package com.zhangfuxing.tools.rpc;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ServiceLoaderUtil;
 import cn.hutool.json.JSONUtil;
 import com.zhangfuxing.tools.http.CommonResponseHandler;
 import com.zhangfuxing.tools.http.HttpClientUtil;
@@ -10,14 +12,15 @@ import com.zhangfuxing.tools.rpc.anno.RpcMapping;
 import com.zhangfuxing.tools.rpc.anno.RpcParam;
 
 import java.io.InputStream;
-import java.lang.reflect.*;
 import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -30,6 +33,13 @@ import java.util.StringJoiner;
  */
 public class RpcInvocationHandler implements InvocationHandler {
     private String basURL;
+
+    List<RpcRequestProcessor> rpcProcessors;
+
+    {
+        rpcProcessors = ServiceLoaderUtil.loadList(RpcRequestProcessor.class);
+    }
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Class<?> declaringClass = method.getDeclaringClass();
@@ -138,6 +148,15 @@ public class RpcInvocationHandler implements InvocationHandler {
         }
         if (rpcHeaders != null) {
             rpcHeaders.getHeader().forEach(builder::header);
+        }
+
+        if (!CollUtil.isEmpty(this.rpcProcessors)) {
+            for (var rpcProcessor : this.rpcProcessors) {
+                if (rpcProcessor == null) {
+                    continue;
+                }
+                rpcProcessor.processor(builder);
+            }
         }
 
         return builder.response(bodyHandler);
