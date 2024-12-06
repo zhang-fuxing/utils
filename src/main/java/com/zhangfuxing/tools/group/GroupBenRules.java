@@ -1,7 +1,6 @@
 package com.zhangfuxing.tools.group;
 
 import com.zhangfuxing.tools.lambda.LambdaUtil;
-import com.zhangfuxing.tools.lambda.SFun;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,11 +13,11 @@ import java.util.List;
  */
 public class GroupBenRules<T, K, E, ChildClass> {
     // 提取分组主要属性的提取函数
-    SFun<T, K> keyExt;
+    LambdaUtil.SerializableFunction<T, K> keyExt;
     // 提取分组父级属性的函数列表
-    List<SFun<T, ?>> ext;
+    List<LambdaUtil.SerializableFunction<T, ?>> ext;
     // 提取子级属性的函数列表
-    List<SFun<T, ?>> child;
+    List<LambdaUtil.SerializableFunction<T, ?>> child;
     // 子级的名称
     String childName = "child";
     // 当前使用的构建者对象
@@ -32,7 +31,7 @@ public class GroupBenRules<T, K, E, ChildClass> {
         child = new ArrayList<>();
     }
 
-    public GroupBenRules(SFun<T, K> keyExt, Class<E> targetClass, Class<ChildClass> childClass) {
+    public GroupBenRules(LambdaUtil.SerializableFunction<T, K> keyExt, Class<E> targetClass, Class<ChildClass> childClass) {
         this();
         this.keyExt = keyExt;
         this.targetClass = targetClass;
@@ -46,7 +45,7 @@ public class GroupBenRules<T, K, E, ChildClass> {
      * @param <V>    值类型
      * @return 当前分组对象
      */
-    public <V> GroupBenRules<T, K, E,ChildClass> mainField(SFun<T, V> extFun) {
+    public <V> GroupBenRules<T, K, E,ChildClass> mainField(LambdaUtil.SerializableFunction<T, V> extFun) {
         this.ext.add(extFun);
         return this;
     }
@@ -71,7 +70,7 @@ public class GroupBenRules<T, K, E, ChildClass> {
      * @param <V>    返回的值类型
      * @return 当前的分组对象
      */
-    public <V> GroupBenRules<T, K, E,ChildClass> childFiled(SFun<T, V> extFun) {
+    public <V> GroupBenRules<T, K, E,ChildClass> childFiled(LambdaUtil.SerializableFunction<T, V> extFun) {
         this.child.add(extFun);
         return this;
     }
@@ -87,8 +86,8 @@ public class GroupBenRules<T, K, E, ChildClass> {
         return this;
     }
 
-    public GroupBenRules<T, K, E,ChildClass> setChildName(SFun<E, ?> lambda) {
-        this.childName = LambdaUtil.getName(lambda);
+    public GroupBenRules<T, K, E,ChildClass> setChildName(LambdaUtil.SerializableFunction<E, ?> lambda) {
+        this.childName = LambdaUtil.getFiledName(lambda);
         return this;
     }
 

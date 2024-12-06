@@ -1,7 +1,6 @@
 package com.zhangfuxing.tools.group;
 
 import com.zhangfuxing.tools.lambda.LambdaUtil;
-import com.zhangfuxing.tools.lambda.SFun;
 import com.zhangfuxing.tools.util.RefUtil;
 
 import java.lang.reflect.Field;
@@ -58,7 +57,7 @@ public class GroupBuilder<T, R> {
      * @param <K>  分组值类型
      * @return 分组规则，可以详细的划分要如何分组，要提取哪些字段到父级分组 调用end方法结束这一次分组规则设置
      */
-    public <K> GroupRules<T, K> groupBy(SFun<T, K> sFun) {
+    public <K> GroupRules<T, K> groupBy(LambdaUtil.SerializableFunction<T, K> sFun) {
         GroupRules<T, K> tkGroupRules = new GroupRules<>(sFun);
         tkGroupRules.builder = this;
         return tkGroupRules;
@@ -97,7 +96,7 @@ public class GroupBuilder<T, R> {
             if (stringObjectMap == null) {
                 Map<String, Object> g = new LinkedHashMap<>();
                 g.put(mainName, mainKey);
-                for (SFun<T, ?> otherExt : groupRules.ext) {
+                for (LambdaUtil.SerializableFunction<T, ?> otherExt : groupRules.ext) {
                     Object value = otherExt.apply(datum);
                     String key = LambdaUtil.getName(otherExt);
                     g.put(key, value);
@@ -108,7 +107,7 @@ public class GroupBuilder<T, R> {
                     g.put(groupRules.childName, cgList);
                 } else {
                     Map<String, Object> cg = new LinkedHashMap<>();
-                    for (SFun<T, ?> c : groupRules.child) {
+                    for (LambdaUtil.SerializableFunction<T, ?> c : groupRules.child) {
                         Object cValue = c.apply(datum);
                         String cKey = LambdaUtil.getName(c);
                         cg.put(cKey, cValue);
@@ -125,7 +124,7 @@ public class GroupBuilder<T, R> {
                     stringObjectMap.put(groupRules.childName, cgList);
                 } else {
                     Map<String, Object> cg = new LinkedHashMap<>();
-                    for (SFun<T, ?> c : groupRules.child) {
+                    for (LambdaUtil.SerializableFunction<T, ?> c : groupRules.child) {
                         Object cValue = c.apply(datum);
                         String cKey = LambdaUtil.getName(c);
                         cg.put(cKey, cValue);
@@ -169,7 +168,7 @@ public class GroupBuilder<T, R> {
      * @return 分组Bean支持的分组规则
      */
     @SuppressWarnings("unchecked")
-    public <K, ChildClass, E> GroupBenRules<T, K, E, ChildClass> groupBy(SFun<T, K> sFun, Class<E> targetClass, Class<ChildClass> childClass) {
+    public <K, ChildClass, E> GroupBenRules<T, K, E, ChildClass> groupBy(LambdaUtil.SerializableFunction<T, K> sFun, Class<E> targetClass, Class<ChildClass> childClass) {
         GroupBenRules<T, K, E, ChildClass> support = new GroupBenRules<>(sFun, targetClass, childClass);
         support.builder = (GroupBuilder<T, E>) this;
         return support;
@@ -184,7 +183,7 @@ public class GroupBuilder<T, R> {
      * @param <ChildClass> 分组子类型
      * @return 分组Bean支持的分组规则
      */
-    public <K, ChildClass> GroupBenRules<T, K, R, ChildClass> groupBy(SFun<T, K> sFun, Class<ChildClass> childClass) {
+    public <K, ChildClass> GroupBenRules<T, K, R, ChildClass> groupBy(LambdaUtil.SerializableFunction<T, K> sFun, Class<ChildClass> childClass) {
         return groupBy(sFun, this.rclass, childClass);
     }
 
@@ -226,10 +225,10 @@ public class GroupBuilder<T, R> {
 
             if (instance == null) {
                 instance = RefUtil.newInstance(support.targetClass);
-                RefUtil.setField(instance, LambdaUtil.getName(support.keyExt), mainKey, true);
+                RefUtil.setField(instance, LambdaUtil.getFiledName(support.keyExt), mainKey, true);
 
-                for (SFun<T, ?> otherField : support.ext) {
-                    RefUtil.setField(instance, LambdaUtil.getName(otherField), otherField.apply(datum), true);
+                for (LambdaUtil.SerializableFunction<T, ?> otherField : support.ext) {
+                    RefUtil.setField(instance, LambdaUtil.getFiledName(otherField), otherField.apply(datum), true);
                 }
 
                 if (support.child.isEmpty()) {
@@ -276,8 +275,8 @@ public class GroupBuilder<T, R> {
 
     private <K, E, ChildClass> ChildClass createChildInstance(GroupBenRules<T, K, E, ChildClass> support, T datum) {
         ChildClass childInstance = RefUtil.newInstance(support.childClass);
-        for (SFun<T, ?> csf : support.child) {
-            RefUtil.setField(childInstance, LambdaUtil.getName(csf), csf.apply(datum), true);
+        for (LambdaUtil.SerializableFunction<T, ?> csf : support.child) {
+            RefUtil.setField(childInstance, LambdaUtil.getFiledName(csf), csf.apply(datum), true);
         }
         return childInstance;
     }
@@ -297,7 +296,7 @@ public class GroupBuilder<T, R> {
             if (e == null) {
                 RefUtil.setField(instance, mainName, mainKey, true);
                 // 提取并设置父类的属性值
-                for (SFun<T, ?> otherField : support.ext) {
+                for (LambdaUtil.SerializableFunction<T, ?> otherField : support.ext) {
                     Object value = otherField.apply(datum);
                     String name = LambdaUtil.getName(otherField);
                     RefUtil.setField(instance, name, value, true);
@@ -312,7 +311,7 @@ public class GroupBuilder<T, R> {
                 // 存在自定义的子类字段提取
                 else {
                     ChildClass childInstance = RefUtil.newInstance(support.childClass);
-                    for (SFun<T, ?> csf : support.child) {
+                    for (LambdaUtil.SerializableFunction<T, ?> csf : support.child) {
                         Object value = csf.apply(datum);
                         String name = LambdaUtil.getName(csf);
                         RefUtil.setField(childInstance, name, value, true);
@@ -332,7 +331,7 @@ public class GroupBuilder<T, R> {
                     RefUtil.setField(e, support.childName, o, true);
                 } else {
                     ChildClass childInstance = RefUtil.newInstance(support.childClass);
-                    for (SFun<T, ?> csf : support.child) {
+                    for (LambdaUtil.SerializableFunction<T, ?> csf : support.child) {
                         Object value = csf.apply(datum);
                         String name = LambdaUtil.getName(csf);
                         RefUtil.setField(childInstance, name, value, true);

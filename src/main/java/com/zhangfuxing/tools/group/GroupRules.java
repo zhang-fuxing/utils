@@ -1,7 +1,6 @@
 package com.zhangfuxing.tools.group;
 
 import com.zhangfuxing.tools.lambda.LambdaUtil;
-import com.zhangfuxing.tools.lambda.SFun;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +14,9 @@ import java.util.List;
  * @email zhangfuxing1010@163.com
  */
 public class GroupRules<T, K> {
-    SFun<T, K> keyExt;
-    List<SFun<T, ?>> ext;
-    List<SFun<T, ?>> child;
+    LambdaUtil.SerializableFunction<T, K> keyExt;
+    List<LambdaUtil.SerializableFunction<T, ?>> ext;
+    List<LambdaUtil.SerializableFunction<T, ?>> child;
     String childName = "child";
     GroupBuilder<T,?> builder;
 
@@ -26,7 +25,7 @@ public class GroupRules<T, K> {
         child = new ArrayList<>();
     }
 
-    public GroupRules(SFun<T, K> sFun) {
+    public GroupRules(LambdaUtil.SerializableFunction<T, K> sFun) {
         this.keyExt = sFun;
         this.ext = new ArrayList<>();
         this.child = new ArrayList<>();
@@ -39,7 +38,7 @@ public class GroupRules<T, K> {
      * @param <V>    值类型
      * @return 当前分组对象
      */
-    public <V> GroupRules<T, K> mainField(SFun<T, V> extFun) {
+    public <V> GroupRules<T, K> mainField(LambdaUtil.SerializableFunction<T, V> extFun) {
         this.ext.add(extFun);
         return this;
     }
@@ -64,7 +63,7 @@ public class GroupRules<T, K> {
      * @param <V>    返回的值类型
      * @return 当前的分组对象
      */
-    public <V> GroupRules<T, K> childFiled(SFun<T, V> extFun) {
+    public <V> GroupRules<T, K> childFiled(LambdaUtil.SerializableFunction<T, V> extFun) {
         this.child.add(extFun);
         return this;
     }
@@ -80,7 +79,7 @@ public class GroupRules<T, K> {
         return this;
     }
 
-    public GroupRules<T, K> setChildName(SFun<T, ?> lambda) {
+    public GroupRules<T, K> setChildName(LambdaUtil.SerializableFunction<T, ?> lambda) {
         this.childName = LambdaUtil.getName(lambda);
         return this;
     }

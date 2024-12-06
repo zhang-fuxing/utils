@@ -68,8 +68,7 @@ public class DbDriver {
 
         } else {
             if (!libs.endsWith(".jar")) {
-                Log.error("请指定有效的数据库依赖 xxx.jar", null);
-                return null;
+                throw new IllegalArgumentException("无效的驱动文件：" + libs);
             }
             urls = new String[]{path.toString()};
         }
