@@ -14,6 +14,30 @@ public class DbConfig {
     private String password = "";
     private String libs = "";
 
+    public DbConfig() {
+    }
+
+    public DbConfig(String libs, String driverClassName, String url, String username, String password) {
+        this.driverClassName = driverClassName;
+        this.url = url;
+        this.username = username;
+        this.password = password;
+        this.libs = libs;
+    }
+
+    public DbConfig(String driverClassName, String url, String username, String password) {
+        this.driverClassName = driverClassName;
+        this.url = url;
+        this.username = username;
+        this.password = password;
+    }
+
+    public DbConfig(String url, String username, String password) {
+        this.url = url;
+        this.username = username;
+        this.password = password;
+    }
+
     public String getDriverClassName() {
         return driverClassName;
     }

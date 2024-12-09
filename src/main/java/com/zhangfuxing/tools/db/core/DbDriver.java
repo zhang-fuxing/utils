@@ -1,6 +1,9 @@
 package com.zhangfuxing.tools.db.core;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -8,14 +11,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.ServiceLoader;
+import java.sql.*;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -25,19 +22,27 @@ import java.util.stream.Stream;
  * @email zhangfuxing1010@163.com
  */
 public class DbDriver {
+    private static final Logger log = LoggerFactory.getLogger(DbDriver.class);
     final DbConfig dbConfig;
     Connection connection;
     Driver driver;
+    DbSetResolve resolve;
 
     private DbDriver() {
         dbConfig = new DbConfig();
+        resolve = new JavaxDbSetResolve();
     }
 
     public DbDriver(DbConfig dbConfig) throws Exception {
+        resolve = new JavaxDbSetResolve();
         this.dbConfig = dbConfig;
         init();
+        getConnection();
     }
 
+    public void setResolve(DbSetResolve resolve) {
+        this.resolve = resolve;
+    }
 
     private void init() throws Exception {
         String libs = dbConfig.getLibs();
@@ -50,6 +55,7 @@ public class DbDriver {
             }
         }
 
+        log.info("DbDriver init finished");
     }
 
     private static Driver loadDriverByLibs(String libs, String url, String... driverClassNames) throws Exception {
@@ -121,6 +127,9 @@ public class DbDriver {
     }
 
     public Connection getConnection() throws SQLException {
+        if (connection != null && !connection.isClosed()) {
+            return connection;
+        }
         Properties properties = new Properties();
         properties.put("user", dbConfig.getUsername());
         properties.put("password", dbConfig.getPassword());
@@ -128,6 +137,7 @@ public class DbDriver {
             dbConfig.setDriverClassName(driver.getClass().getName());
         }
         connection = driver.connect(dbConfig.getUrl(), properties);
+        log.info("connection opened");
         return connection;
     }
 
@@ -149,4 +159,16 @@ public class DbDriver {
     public static Connection getConnection(String url, String username, String password) throws Exception {
         return getConnection(null, null, url, username, password);
     }
+
+    public void close() {
+        if (connection != null) {
+            try {
+                connection.close();
+                log.info("connection closed");
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 }
