@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ProgramTimer {
     private final Logger log;
-    private final long createTime;
+    private long createTime;
     private long currentTime;
 
     public ProgramTimer(Logger log) {
@@ -43,7 +43,10 @@ public class ProgramTimer {
     public static ProgramTimer timer(Logger log) {
         return new ProgramTimer(log);
     }
-
+    public void reset() {
+        this.createTime = System.currentTimeMillis();
+        this.currentTime = this.createTime;
+    }
     public void take(String tip) {
         take(tip, this.currentTime, System.currentTimeMillis());
     }
@@ -66,5 +69,17 @@ public class ProgramTimer {
         }
         log.info("{}: {} ms", tip, (endTime - startTime));
         this.currentTime = endTime;
+    }
+
+    public long getTake() {
+        long lastTime = System.currentTimeMillis();
+        long take = lastTime - this.currentTime;
+        this.currentTime = lastTime;
+        return take;
+    }
+
+    public long getTotalTake() {
+        long lastTime = System.currentTimeMillis();
+        return lastTime - this.createTime;
     }
 }

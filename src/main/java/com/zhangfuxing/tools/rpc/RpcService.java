@@ -1,6 +1,8 @@
 package com.zhangfuxing.tools.rpc;
 
 import com.zhangfuxing.tools.rpc.anno.RpcClient;
+import com.zhangfuxing.tools.rpc.error.DefaultErrorHandler;
+import com.zhangfuxing.tools.rpc.error.ErrorHandler;
 
 import java.lang.reflect.Proxy;
 import java.util.Map;
@@ -12,8 +14,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2024/10/15
  * @email zhangfuxing1010@163.com
  */
+@SuppressWarnings({"unchecked", "DuplicatedCode"})
 public class RpcService {
     private static final Map<Class<?>, Object> serviceCache = new ConcurrentHashMap<>();
+    private static ErrorHandler globalErrorHandler = new DefaultErrorHandler();
+
+    public static void setGlobalErrorHandler(ErrorHandler errorHandler) {
+        globalErrorHandler = errorHandler;
+    }
 
     public static <T> T getService(Class<T> clazz) {
         return getService(clazz, null);
@@ -21,10 +29,17 @@ public class RpcService {
 
     @SuppressWarnings({"unchecked"})
     public static <T> T getService(Class<T> clazz, String baseURL) {
-        if (serviceCache.containsKey(clazz)) {
-            return (T) serviceCache.get(clazz);
+        Object service = serviceCache.get(clazz);
+        if (service != null) {
+            return (T) service;
         }
+        
         synchronized (RpcService.class) {
+            service = serviceCache.get(clazz);
+            if (service != null) {
+                return (T) service;
+            }
+            
             if (!clazz.isAnnotationPresent(RpcClient.class)) {
                 throw new IllegalArgumentException("指定类不是远程调用客户端，请添加 @RpcClient 到目标类上");
             }
@@ -34,6 +49,7 @@ public class RpcService {
                 baseURL = domain.isBlank() ? rpcClient.schema() + "://" + rpcClient.host() + ":" + rpcClient.port() : domain;
             }
             var handler = getRpcInvocationHandler(baseURL);
+            handler.setErrorHandler(globalErrorHandler);
             T serviceInstance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, handler);
             serviceCache.put(clazz, serviceInstance);
             return serviceInstance;
@@ -48,6 +64,34 @@ public class RpcService {
     public static <T> T getService(Class<T> clazz, String schema, String host, int port) {
         checkParams(schema, host);
         return getService(clazz, schema + "://" + host + ":" + port);
+    }
+
+    public static <T> T getService(Class<T> clazz, String baseURL, int maxRetries) {
+        Object service = serviceCache.get(clazz);
+        if (service != null) {
+            return (T) service;
+        }
+        
+        synchronized (RpcService.class) {
+            service = serviceCache.get(clazz);
+            if (service != null) {
+                return (T) service;
+            }
+            
+            if (!clazz.isAnnotationPresent(RpcClient.class)) {
+                throw new IllegalArgumentException("指定类不是远程调用客户端，请添加 @RpcClient 到目标类上");
+            }
+            RpcClient rpcClient = clazz.getAnnotation(RpcClient.class);
+            if (baseURL == null || baseURL.isBlank()) {
+                String domain = rpcClient.domain();
+                baseURL = domain.isBlank() ? rpcClient.schema() + "://" + rpcClient.host() + ":" + rpcClient.port() : domain;
+            }
+            var handler = getRpcInvocationHandler(baseURL);
+            handler.setMaxRetries(maxRetries);
+            T serviceInstance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, handler);
+            serviceCache.put(clazz, serviceInstance);
+            return serviceInstance;
+        }
     }
 
     private static <T> RpcInvocationHandler getRpcInvocationHandler(String baseURL) {

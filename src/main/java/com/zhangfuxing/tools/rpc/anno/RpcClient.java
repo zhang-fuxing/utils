@@ -27,4 +27,6 @@ public @interface RpcClient {
     String[] headers() default {};
 
     long timeout() default -1;
+
+    int maxRetries() default 3;
 }
