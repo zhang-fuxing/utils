@@ -1,5 +1,7 @@
 package com.zhangfuxing.tools.db.core;
 
+import com.zhangfuxing.tools.db.convert.TypeConverterRegistry;
+import com.zhangfuxing.tools.db.handler.FieldValueHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +27,10 @@ import java.util.stream.Collectors;
 public abstract class DbSetResolve {
     private static final Logger log = LoggerFactory.getLogger(DbSetResolve.class);
 
-    private final Map<Class<?>, MemoryCache> cache = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, MemoryCache> cache = new ConcurrentHashMap<>();
+
+    private final List<FieldValueHandler> fieldHandlers = new ArrayList<>();
+    private boolean useTypeConverter = true;
 
     /**
      * 是否使用数据库查询到的列的索引进行数据转换
@@ -58,12 +63,44 @@ public abstract class DbSetResolve {
      */
     protected <T> void extractResultSetValue(ResultSet rs, T obj, Field field) {
         String columnName = getColumnName(field);
+        log.debug("Mapping field: {} to column: {}", field.getName(), columnName);
         if (columnName == null) {
             return;
         }
         Class<?> clazz = field.getType();
         try {
             field.setAccessible(true);
+            Object value = rs.getObject(columnName);
+            log.debug("Column {} value: {}", columnName, value);
+            
+            // 应用字段处理器
+            for (FieldValueHandler handler : fieldHandlers) {
+                if (handler.canHandle(field)) {
+                    value = handler.handleValue(value, field);
+                }
+            }
+            
+            if (value == null) {
+                field.set(obj, null);
+                return;
+            }
+
+            // 尝试使用类型转换器
+            if (useTypeConverter) {
+                try {
+                    Object converted = TypeConverterRegistry.convert(value, field.getType());
+                    field.set(obj, converted);
+                    return;
+                } catch (IllegalArgumentException e) {
+                    // 转换失败，继续使用默认转换逻辑
+                }
+            }
+
+            if (value.getClass().equals(clazz) || clazz.isAssignableFrom(value.getClass())) {
+                field.set(obj, value);
+                return;
+            }
+
             switch (clazz.getSimpleName().toLowerCase()) {
                 case "int", "integer" -> field.set(obj, rs.getInt(columnName));
                 case "long" -> field.set(obj, rs.getLong(columnName));
@@ -76,7 +113,16 @@ public abstract class DbSetResolve {
                 case "bigdecimal" -> field.set(obj, rs.getBigDecimal(columnName));
                 case "byte[]" -> field.set(obj, rs.getBytes(columnName));
                 // 日期数据转换
-                case "date", "time", "timestamp" -> field.set(obj, rs.getTimestamp(columnName));
+                case "date", "time", "timestamp" -> {
+                    java.sql.Timestamp timestamp = rs.getTimestamp(columnName);
+                    if (clazz == java.sql.Date.class) {
+                        field.set(obj, timestamp != null ? new java.sql.Date(timestamp.getTime()) : null);
+                    } else if (clazz == java.sql.Time.class) {
+                        field.set(obj, timestamp != null ? new java.sql.Time(timestamp.getTime()) : null);
+                    } else {
+                        field.set(obj, timestamp);
+                    }
+                }
                 case "localdate" -> field.set(obj, toLocalDate(rs.getTimestamp(columnName)));
                 case "localtime" -> field.set(obj, toLocalTime(rs.getTimestamp(columnName)));
                 case "localdatetime" -> field.set(obj, toLocalDateTime(rs.getTimestamp(columnName)));
@@ -91,10 +137,29 @@ public abstract class DbSetResolve {
                 case "nclob" -> field.set(obj, rs.getNClob(columnName));
                 case "sqlxml" -> field.set(obj, rs.getSQLXML(columnName));
                 default -> {
+                    if (clazz.isEnum()) {
+                        String enumValue = rs.getString(columnName);
+                        if (enumValue != null) {
+                            try {
+                                field.set(obj, Enum.valueOf((Class<? extends Enum>) clazz, enumValue));
+                            } catch (IllegalArgumentException e) {
+                                log.warn("枚举值 {} 不存在于 {}", enumValue, clazz.getName());
+                                field.set(obj, null);
+                            }
+                        }
+                    } else {
+                        try {
+                            field.set(obj, value);
+                        } catch (IllegalArgumentException e) {
+                            log.error("字段 {} 类型转换失败: {} -> {}", field.getName(), value.getClass(), clazz);
+                            throw e;
+                        }
+                    }
                 }
             }
-        } catch (IllegalAccessException | SQLException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.error("字段 {} 转换失败: {}", field.getName(), e.getMessage());
+            throw new RuntimeException(String.format("字段 %s 转换失败: %s", field.getName(), e.getMessage()), e);
         }
     }
 
@@ -111,6 +176,13 @@ public abstract class DbSetResolve {
         String simpleName = field.getType().getSimpleName();
         try {
             field.setAccessible(true);
+            // 先检查结果集中的值是否为null
+            Object value = rs.getObject(index);
+            if (value == null) {
+                field.set(obj, null);
+                return;
+            }
+
             switch (simpleName.toLowerCase()) {
                 case "int", "integer" -> field.set(obj, rs.getInt(index));
                 case "long" -> field.set(obj, rs.getLong(index));
@@ -154,12 +226,12 @@ public abstract class DbSetResolve {
      * @return 所有的行Map集合
      */
     public List<Map<String, Object>> getMap(ResultSet resultSet) {
-        List<Map<String, Object>> result = new ArrayList<>();
+        List<Map<String, Object>> result = Collections.synchronizedList(new ArrayList<>());
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
             while (resultSet.next()) {
-                Map<String, Object> map = new LinkedHashMap<>();
+                Map<String, Object> map = Collections.synchronizedMap(new LinkedHashMap<>());
                 for (int i = 1; i <= columnCount; i++) {
                     String columnName = metaData.getColumnName(i);
                     Object value = resultSet.getObject(i);
@@ -170,7 +242,8 @@ public abstract class DbSetResolve {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return result;
+        return result.stream()
+				.map(LinkedHashMap::new).collect(Collectors.toList());
     }
 
     /**
@@ -200,7 +273,7 @@ public abstract class DbSetResolve {
      * @return 实体实例集合
      */
     public <T> List<T> getEntities(ResultSet rs, Class<T> clazz) {
-        List<T> result = new ArrayList<T>();
+        List<T> result = Collections.synchronizedList(new ArrayList<>());
         while (true) {
             T obj = next(rs, clazz);
             if (obj == null) {
@@ -208,7 +281,7 @@ public abstract class DbSetResolve {
             }
             result.add(obj);
         }
-        return result;
+        return new ArrayList<>(result);
     }
 
     /**
@@ -227,13 +300,13 @@ public abstract class DbSetResolve {
             if (!rs.next()) {
                 return null;
             }
-            Map<String, Object> result = new LinkedHashMap<>();
+            Map<String, Object> result = Collections.synchronizedMap(new LinkedHashMap<>());
             for (int i = 1; i <= columnCount; i++) {
                 String columnName = md.getColumnName(i);
                 Object object = rs.getObject(i);
                 result.put(columnName, object);
             }
-            return result;
+            return new LinkedHashMap<>(result);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -256,29 +329,32 @@ public abstract class DbSetResolve {
         }
         try {
             EntityMetaData<T> metaData = getEntityMetaData(clazz);
+            log.debug("Found {} fields in entity class {}", 
+                metaData.fieldList().size(), clazz.getSimpleName());
+            
             T obj = null;
             if (rs.next()) {
                 obj = metaData.constructor().newInstance();
                 if (!useDbIndexConvert) {
                     for (Field field : metaData.fieldList()) {
-                        extractResultSetValue(rs, obj, field);
-                    }
-                } else {
-                    Map<String, Field> fieldMap = metaData.fieldList().stream().collect(Collectors.toMap(f -> f.getName().toUpperCase(), f -> f));
-                    ResultSetMetaData md = rs.getMetaData();
-                    int columnCount = md.getColumnCount();
-                    for (int i = 1; i <= columnCount; i++) {
-                        String columnName = md.getColumnName(i);
-                        Field field = fieldMap.get(columnName.toUpperCase());
-                        if (field == null) {
-                            continue;
+                        String columnName = getColumnName(field);
+                        log.debug("Trying to get value for field {} from column {}", 
+                            field.getName(), columnName);
+                        try {
+                            Object value = rs.getObject(columnName);
+                            log.debug("Value found for column {}: {}", columnName, value);
+                            extractResultSetValue(rs, obj, field);
+                        } catch (SQLException e) {
+                            log.error("Error getting value for column {}: {}", 
+                                columnName, e.getMessage());
+                            throw e;
                         }
-                        extractResultSetValue(rs, i, obj, field);
                     }
                 }
             }
             return obj;
         } catch (Exception e) {
+            log.error("实体转换失败: {}", e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -291,26 +367,31 @@ public abstract class DbSetResolve {
      * @return 元信息对象
      */
     private <T> EntityMetaData<T> getEntityMetaData(Class<T> clazz) {
-        Constructor<T> constructor;
-        List<Field> fieldList;
         MemoryCache memoryCache = cache.get(clazz);
         if (memoryCache == null) {
-            try {
-                constructor = clazz.getDeclaredConstructor();
-            } catch (NoSuchMethodException e) {
-                throw new IllegalArgumentException("类 %s 没有无参构造函数,请提供无参构造。".formatted(clazz.getName()));
+            synchronized (cache) {
+                memoryCache = cache.get(clazz);
+                if (memoryCache == null) {
+                    try {
+                        Constructor<T> constructor = clazz.getDeclaredConstructor();
+                        List<Field> fieldList = getEntityColumnField(clazz);
+                        memoryCache = new MemoryCache();
+                        memoryCache.constructor = constructor;
+                        memoryCache.entityClass = clazz;
+                        memoryCache.fieldList = fieldList;
+                        // 初始化字段映射
+                        for (Field field : fieldList) {
+                            String columnName = getColumnName(field);
+                            memoryCache.addField(field, columnName);
+                        }
+                        cache.put(clazz, memoryCache);
+                    } catch (NoSuchMethodException e) {
+                        throw new IllegalArgumentException("类 %s 没有无参构造函数,请提供无参构造。".formatted(clazz.getName()));
+                    }
+                }
             }
-            fieldList = getEntityColumnField(clazz);
-            memoryCache = new MemoryCache();
-            memoryCache.constructor = constructor;
-            memoryCache.entityClass = clazz;
-            memoryCache.fieldList = fieldList;
-            cache.put(clazz, memoryCache);
-        } else {
-            constructor = (Constructor<T>) memoryCache.constructor;
-            fieldList = getEntityColumnField(clazz);
         }
-        return new EntityMetaData<>(constructor, fieldList);
+        return new EntityMetaData<>((Constructor<T>)memoryCache.constructor, memoryCache.fieldList);
     }
 
 
@@ -340,12 +421,20 @@ public abstract class DbSetResolve {
 
     ZonedDateTime getZonedDateTime(Date date, ZoneId zoneId) {
         Instant instant = date.toInstant();
-        zoneId = Objects.requireNonNullElse(zoneId, ZoneId.systemDefault());
+        zoneId = Objects.requireNonNullElse(zoneId, DEFAULT_ZONE_ID);
         return instant.atZone(zoneId);
     }
 
     public void setUseDbIndexConvert(boolean useDbIndexConvert) {
         this.useDbIndexConvert = useDbIndexConvert;
+    }
+
+    public void addFieldHandler(FieldValueHandler handler) {
+        fieldHandlers.add(handler);
+    }
+
+    public void setUseTypeConverter(boolean useTypeConverter) {
+        this.useTypeConverter = useTypeConverter;
     }
 
     private static class MemoryCache {
@@ -364,12 +453,42 @@ public abstract class DbSetResolve {
          */
         List<Field> fieldList;
 
+        /**
+         * 字段名到Field的映射缓存
+         */
+        ConcurrentHashMap<String, Field> fieldNameMapping;
+
+        /**
+         * 列名到Field的映射缓存
+         */
+        ConcurrentHashMap<String, Field> columnNameMapping;
+
+        private final Object lock = new Object();
+
+        public MemoryCache() {
+            this.fieldNameMapping = new ConcurrentHashMap<>();
+            this.columnNameMapping = new ConcurrentHashMap<>();
+        }
+
+        public void addField(Field field, String columnName) {
+            String fieldKey = field.getName().toUpperCase();
+            String columnKey = columnName != null ? columnName.toUpperCase() : fieldKey;
+            
+            fieldNameMapping.put(fieldKey, field);
+            if (columnName != null) {
+                columnNameMapping.put(columnKey, field);
+                log.debug("Mapped column {} to field {}", columnKey, field.getName());
+            }
+        }
+
         public <T> T newInstance() {
-            if (constructor == null) {
-                try {
-                    constructor = entityClass.getConstructor();
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException("请为 %s 提供无参构造".formatted(entityClass.getName()), e);
+            synchronized (lock) {
+                if (constructor == null) {
+                    try {
+                        constructor = entityClass.getConstructor();
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException("请为 %s 提供无参构造".formatted(entityClass.getName()), e);
+                    }
                 }
             }
             try {
@@ -383,4 +502,6 @@ public abstract class DbSetResolve {
 
     private record EntityMetaData<T>(Constructor<T> constructor, List<Field> fieldList) {
     }
+
+    private static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
 }
