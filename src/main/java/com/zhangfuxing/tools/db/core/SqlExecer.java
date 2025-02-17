@@ -299,7 +299,7 @@ public class SqlExecer implements AutoCloseable {
 	}
 
 	public <T> PageResult<Map<String, Object>> queryPage(String sql, int pageNum, int pageSize, Consumer<PreparedStatement> hock) {
-// 先查询总数
+		// 先查询总数
 		String countSql = "SELECT COUNT(*) FROM (" + sql + ") t";
 		long total = queryCount(countSql, hock);
 

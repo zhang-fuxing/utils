@@ -29,11 +29,11 @@ public enum PageStrategyEnum implements PageStrategy {
 		@Override
 		public String buildPageSql(String sql, int offset, int limit) {
 			String version = getDbVersion();
-			
+
 			if (compareVersion(version, "12.0.0.0") >= 0) {
 				return sql + " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
 			}
-			
+
 			return "SELECT * FROM (SELECT a.*, ROWNUM rn FROM (" + sql +
 				   ") a WHERE ROWNUM <= " + (offset + limit) +
 				   ") WHERE rn > " + offset;
@@ -62,12 +62,12 @@ public enum PageStrategyEnum implements PageStrategy {
 		@Override
 		public String buildPageSql(String sql, int offset, int limit) {
 			String version = getDbVersion();
-			
+
 			if (compareVersion(version, "11.0.0.0") >= 0) {
-				return sql + " ORDER BY (SELECT NULL) OFFSET " + offset + 
+				return sql + " ORDER BY (SELECT NULL) OFFSET " + offset +
 					   " ROWS FETCH NEXT " + limit + " ROWS ONLY";
 			}
-			
+
 			return "SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT 0)) AS RowNum, * FROM (" +
 				   sql + ") AS Results) AS PagedResults WHERE RowNum > " + offset +
 				   " AND RowNum <= " + (offset + limit);
@@ -104,18 +104,6 @@ public enum PageStrategyEnum implements PageStrategy {
 	 * 比较版本号
 	 */
 	protected int compareVersion(String version1, String version2) {
-		String[] v1 = version1.split("\\.");
-		String[] v2 = version2.split("\\.");
-		
-		int length = Math.max(v1.length, v2.length);
-		for (int i = 0; i < length; i++) {
-			int num1 = i < v1.length ? Integer.parseInt(v1[i]) : 0;
-			int num2 = i < v2.length ? Integer.parseInt(v2[i]) : 0;
-			
-			if (num1 != num2) {
-				return num1 - num2;
-			}
-		}
-		return 0;
+		return DbVersion.compareVersion(version1, version2);
 	}
 } 
