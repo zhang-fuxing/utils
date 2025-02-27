@@ -25,7 +25,7 @@ public class ExcelLoader {
 	 * @param <T>          JavaBean对象的类型。
 	 * @return BeanLoader对象，用于加载Excel文件并转换为JavaBean对象。
 	 */
-	public static <T> BeanLoader<T> load(Supplier<T> beanSupplier) {
+	public static <T> BeanLoader<T> createBeanLoader(Supplier<T> beanSupplier) {
 		return new BeanLoader<>(beanSupplier);
 	}
 
@@ -38,7 +38,7 @@ public class ExcelLoader {
 	 * @param <T>           JavaBean对象的类型。
 	 * @return 包含加载数据的对象列表。
 	 */
-	public static <T> List<T> load(String filePath, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping) {
+	public static <T> List<T> beanLoader(String filePath, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping) {
 		return new BeanLoader<>(beanSupplier).addColumnMapping(columnMapping).load(filePath);
 	}
 
@@ -51,7 +51,7 @@ public class ExcelLoader {
 	 * @param <T>           JavaBean对象的类型。
 	 * @return 包含加载数据的对象列表。
 	 */
-	public static <T> List<T> load(InputStream inputStream, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping) {
+	public static <T> List<T> beanLoader(InputStream inputStream, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping) {
 		return new BeanLoader<>(beanSupplier).addColumnMapping(columnMapping).load(inputStream);
 	}
 
@@ -64,7 +64,7 @@ public class ExcelLoader {
 	 * @param <T>           JavaBean对象的类型。
 	 * @return 包含加载数据的对象列表。
 	 */
-	public static <T> List<T> load(File file, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping) {
+	public static <T> List<T> beanLoader(File file, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping) {
 		return new BeanLoader<>(beanSupplier).addColumnMapping(columnMapping).load(file);
 	}
 
@@ -78,7 +78,7 @@ public class ExcelLoader {
 	 * @param <T>           JavaBean对象的类型。
 	 * @return 包含加载数据的对象列表。
 	 */
-	public static <T> List<T> load(String filePath, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping, int rid) {
+	public static <T> List<T> beanLoader(String filePath, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping, int rid) {
 		return new BeanLoader<>(beanSupplier).addColumnMapping(columnMapping).load(filePath, rid);
 	}
 
@@ -92,7 +92,7 @@ public class ExcelLoader {
 	 * @param <T>           JavaBean对象的类型。
 	 * @return 包含加载数据的对象列表。
 	 */
-	public static <T> List<T> load(InputStream inputStream, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping, int rid) {
+	public static <T> List<T> beanLoader(InputStream inputStream, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping, int rid) {
 		return new BeanLoader<>(beanSupplier).addColumnMapping(columnMapping).load(inputStream, rid);
 	}
 
@@ -106,7 +106,7 @@ public class ExcelLoader {
 	 * @param <T>           JavaBean对象的类型。
 	 * @return 包含加载数据的对象列表。
 	 */
-	public static <T> List<T> load(File file, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping, int rid) {
+	public static <T> List<T> beanLoader(File file, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping, int rid) {
 		return new BeanLoader<>(beanSupplier).addColumnMapping(columnMapping).load(file, rid);
 	}
 
