@@ -2,10 +2,12 @@ package com.zhangfuxing.tools.excel;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.poi.excel.ExcelUtil;
+import cn.hutool.poi.excel.ExcelWriter;
 import cn.hutool.poi.excel.sax.handler.RowHandler;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -108,6 +110,55 @@ public class ExcelLoader {
 	 */
 	public static <T> List<T> beanLoader(File file, Supplier<T> beanSupplier, Map<String, BiConsumer<T, Object>> columnMapping, int rid) {
 		return new BeanLoader<>(beanSupplier).addColumnMapping(columnMapping).load(file, rid);
+	}
+
+	/**
+	 * 根据Java类创建Excel模板，并写入输出流中，默认关闭输出流
+	 *
+	 * @param outputStream 输出流
+	 * @param mapping      列名与字段的映射关系
+	 */
+	public static <T> void writeTemplate(OutputStream outputStream, Map<String, BiConsumer<T, Object>> mapping) {
+		writeTemplate(outputStream, mapping, true);
+	}
+
+	/**
+	 * 根据Java类创建Excel模板，并写入输出流中
+	 *
+	 * @param outputStream 输出流
+	 * @param mapping      列名与字段的映射关系
+	 * @param autoClose    是否自动关闭输出流
+	 */
+	public static <T> void writeTemplate(OutputStream outputStream, Map<String, BiConsumer<T, Object>> mapping, boolean autoClose) {
+		List<String> strings = new ArrayList<>();
+		for (Map.Entry<String, BiConsumer<T, Object>> entry : mapping.entrySet()) {
+			strings.add(entry.getKey());
+		}
+		writeTemplate(outputStream, strings, autoClose);
+	}
+
+	/**
+	 * 根据Java类创建Excel模板，并写入输出流中
+	 *
+	 * @param outputStream 输出流
+	 * @param headers      列名
+	 * @param autoClose    是否自动关闭输出流
+	 */
+	public static <T> void writeTemplate(OutputStream outputStream, Iterable<T> headers, boolean autoClose) {
+		try (ExcelWriter writer = ExcelUtil.getWriter(true)) {
+			writer.writeRow(headers);
+			writer.flush(outputStream, autoClose);
+		}
+	}
+
+	/**
+	 * 根据Java类创建Excel模板，并写入输出流中，默认关闭输出流
+	 *
+	 * @param outputStream 输出流
+	 * @param headers      列名
+	 */
+	public static <T> void writeTemplate(OutputStream outputStream, Iterable<T> headers) {
+		writeTemplate(outputStream, headers, true);
 	}
 
 	public static class BeanLoader<T> {

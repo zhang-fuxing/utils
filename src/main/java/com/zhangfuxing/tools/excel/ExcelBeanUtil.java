@@ -6,12 +6,15 @@ import cn.hutool.core.util.StrUtil;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * @author 张福兴
@@ -51,13 +54,34 @@ public class ExcelBeanUtil {
 		return readBean(inputStream, beanSupplier, 0);
 	}
 
+	/**
+	 * 根据Java类创建Excel模板，并写入输出流中，默认关闭输出流
+	 *
+	 * @param outputStream 输出流
+	 * @param beanSupplier BeanSupplier
+	 */
+	public static <T> void writeTemplate(OutputStream outputStream, Supplier<T> beanSupplier) {
+		writeTemplate(outputStream, beanSupplier, true);
+	}
+
+	/**
+	 * 根据Java类创建Excel模板，并写入输出流中
+	 *
+	 * @param outputStream 输出流
+	 * @param beanSupplier BeanSupplier
+	 * @param autoClose    是否自动关闭输出流
+	 */
+	public static <T> void writeTemplate(OutputStream outputStream, Supplier<T> beanSupplier, boolean autoClose) {
+		Map<String, BiConsumer<T, Object>> mapping = createMapping(beanSupplier);
+		ExcelLoader.writeTemplate(outputStream, mapping, autoClose);
+	}
 
 	private static <T> Map<String, BiConsumer<T, Object>> createMapping(Supplier<T> beanSupplier) {
 		T instance = beanSupplier.get();
-		Map<String, BiConsumer<T, Object>> map = new HashMap<>();
-		Set<Field> fieldSet = Arrays.stream(ReflectUtil.getFields(instance.getClass()))
+		Map<String, BiConsumer<T, Object>> map = new LinkedHashMap<>();
+		var fieldSet = Arrays.stream(ReflectUtil.getFields(instance.getClass()))
 				.filter(field -> field.isAnnotationPresent(ExcelHeader.class))
-				.collect(Collectors.toSet());
+				.toList();
 		for (Field field : fieldSet) {
 			ExcelHeader excelHeader = field.getAnnotation(ExcelHeader.class);
 			// 获取字段对应的Setter方法
