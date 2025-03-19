@@ -12,6 +12,6 @@ public class RpcRequestProcessorImpl implements RpcRequestProcessor {
 
     @Override
     public void processor(HttpRequestBuilder builder) {
-        System.out.println("RpcRequestProcessorImpl processor......");
+
     }
 }

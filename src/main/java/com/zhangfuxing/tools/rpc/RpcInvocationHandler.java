@@ -5,30 +5,22 @@ import cn.hutool.core.util.ServiceLoaderUtil;
 import cn.hutool.json.JSONUtil;
 import com.zhangfuxing.tools.http.HttpClientUtil;
 import com.zhangfuxing.tools.http.HttpRequestBuilder;
-import com.zhangfuxing.tools.rpc.anno.RpcBody;
-import com.zhangfuxing.tools.rpc.anno.RpcClient;
-import com.zhangfuxing.tools.rpc.anno.RpcMapping;
-import com.zhangfuxing.tools.rpc.anno.RpcParam;
-import com.zhangfuxing.tools.rpc.anno.RpcPathVariable;
+import com.zhangfuxing.tools.rpc.anno.*;
 import com.zhangfuxing.tools.rpc.convert.ResponseConverter;
 import com.zhangfuxing.tools.rpc.error.DefaultErrorHandler;
 import com.zhangfuxing.tools.rpc.error.ErrorHandler;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.*;
+import java.lang.reflect.Parameter;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.StringJoiner;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * @author 张福兴
@@ -37,360 +29,365 @@ import java.util.HashMap;
  * @email zhangfuxing1010@163.com
  */
 public class RpcInvocationHandler implements InvocationHandler {
-    private String basURL;
-    private int maxRetries = 3; // 默认重试次数
-    private ErrorHandler errorHandler;
+	private String basURL;
+	private int maxRetries = 3; // 默认重试次数
+	private ErrorHandler errorHandler;
 
-    List<RpcRequestProcessor> rpcProcessors;
+	List<RpcRequestProcessor> rpcProcessors;
 
-    {
-        rpcProcessors = ServiceLoaderUtil.loadList(RpcRequestProcessor.class);
-        errorHandler = new DefaultErrorHandler();
-    }
+	{
+		rpcProcessors = ServiceLoaderUtil.loadList(RpcRequestProcessor.class);
+		errorHandler = new DefaultErrorHandler();
+	}
 
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        // 1. 获取注解和基本信息
-        RpcRequestInfo requestInfo = extractRequestInfo(method);
-        
-        // 2. 处理请求参数
-        RequestParameters parameters = processParameters(method, args);
-        
-        // 3. 构建URL
-        String targetUrl = buildTargetUrl(requestInfo, parameters);
-        
-        // 4. 构建请求
-        var builder = buildRequestBuilder(targetUrl, requestInfo, parameters);
-        
-        // 5. 执行请求并处理响应
-        return executeRequest(builder, method, requestInfo);
-    }
+	@Override
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		String targetUrl = null;
+		try {
+			// 1. 获取注解和基本信息
+			RpcRequestInfo requestInfo = extractRequestInfo(method);
 
-    private record RpcRequestInfo(RpcClient rpcClient, RpcMapping rpcMapping, String baseUri) {
-    }
+			// 2. 处理请求参数
+			RequestParameters parameters = processParameters(method, args);
 
-    private static class RequestParameters {
-        final StringJoiner urlParams = new StringJoiner("&");
-        final Map<String, String> pathVariables = new HashMap<>();
-        HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.noBody();
-        Map<String, String> cookieHead;
-        RpcHeader rpcHeaders;
-    }
+			// 3. 构建URL
+			targetUrl = buildTargetUrl(requestInfo, parameters);
 
-    private RpcRequestInfo extractRequestInfo(Method method) {
-        Class<?> declaringClass = method.getDeclaringClass();
-        RpcClient rpcClient = declaringClass.getAnnotation(RpcClient.class);
-        String baseUri = Optional.ofNullable(declaringClass.getAnnotation(RpcMapping.class))
-                .map(RpcMapping::value)
-                .orElse("");
-        RpcMapping rpcMapping = method.getAnnotation(RpcMapping.class);
-        return new RpcRequestInfo(rpcClient, rpcMapping, baseUri);
-    }
+			// 4. 构建请求
+			var builder = buildRequestBuilder(targetUrl, requestInfo, parameters);
 
-    private RequestParameters processParameters(Method method, Object[] args) {
-        RequestParameters params = new RequestParameters();
-        if (args == null || method.getParameters().length == 0) {
-            return params;
-        }
+			// 5. 执行请求并处理响应
+			return executeRequest(builder, method, requestInfo);
+		} catch (Exception e) {
+			throw errorHandler.wrapException(e, targetUrl, method);
+		}
+	}
 
-        for (int i = 0; i < method.getParameters().length; i++) {
-            processParameter(method.getParameters()[i], args[i], params);
-        }
-        return params;
-    }
+	private record RpcRequestInfo(RpcClient rpcClient, RpcMapping rpcMapping, String baseUri) {
+	}
 
-    private void processParameter(Parameter parameter, Object arg, RequestParameters params) {
-        RpcParam annotation = parameter.getAnnotation(RpcParam.class);
-        if (annotation != null) {
-            processUrlParameter(annotation, arg, params);
-            return;
-        }
+	private static class RequestParameters {
+		final StringJoiner urlParams = new StringJoiner("&");
+		final Map<String, String> pathVariables = new HashMap<>();
+		HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.noBody();
+		Map<String, String> cookieHead;
+		RpcHeader rpcHeaders;
+	}
 
-        RpcPathVariable pathVariable = parameter.getAnnotation(RpcPathVariable.class);
-        if (pathVariable != null) {
-            processPathVariable(pathVariable, arg, params);
-            return;
-        }
+	private RpcRequestInfo extractRequestInfo(Method method) {
+		Class<?> declaringClass = method.getDeclaringClass();
+		RpcClient rpcClient = declaringClass.getAnnotation(RpcClient.class);
+		String baseUri = Optional.ofNullable(declaringClass.getAnnotation(RpcMapping.class))
+				.map(RpcMapping::value)
+				.orElse("");
+		RpcMapping rpcMapping = method.getAnnotation(RpcMapping.class);
+		return new RpcRequestInfo(rpcClient, rpcMapping, baseUri);
+	}
 
-        RpcBody rpcBody = parameter.getAnnotation(RpcBody.class);
-        if (rpcBody != null) {
-            processBodyParameter(rpcBody, arg, params);
-            return;
-        }
+	private RequestParameters processParameters(Method method, Object[] args) {
+		RequestParameters params = new RequestParameters();
+		if (args == null || method.getParameters().length == 0) {
+			return params;
+		}
 
-        if (arg instanceof RpcCookie cookies) {
-            params.cookieHead = cookies.getCookies();
-        } else if (arg instanceof RpcHeader rpcHeader) {
-            params.rpcHeaders = rpcHeader;
-        }
-    }
+		for (int i = 0; i < method.getParameters().length; i++) {
+			processParameter(method.getParameters()[i], args[i], params);
+		}
+		return params;
+	}
 
-    private void processUrlParameter(RpcParam annotation, Object arg, RequestParameters params) {
-        String paraName = annotation.value();
-        if (arg == null && annotation.required()) {
-            throw new IllegalArgumentException(
-                    String.format("参数：%s 是必须的，如果不需要此参数，请设置 @RpcParam(required=false)", paraName));
-        }
-        if (arg != null) {
-            params.urlParams.add(paraName + "=" + URLEncoder.encode(String.valueOf(arg), StandardCharsets.UTF_8));
-        }
-    }
+	private void processParameter(Parameter parameter, Object arg, RequestParameters params) {
+		RpcParam annotation = parameter.getAnnotation(RpcParam.class);
+		if (annotation != null) {
+			processUrlParameter(annotation, arg, params);
+			return;
+		}
 
-    private void processPathVariable(RpcPathVariable annotation, Object arg, RequestParameters params) {
-        String paraName = annotation.value();
-        if (arg == null && annotation.required()) {
-            throw new IllegalArgumentException(
-                    String.format("路径参数：%s 是必须的", paraName));
-        }
-        if (arg != null) {
-            params.pathVariables.put(paraName, URLEncoder.encode(String.valueOf(arg), StandardCharsets.UTF_8));
-        }
-    }
+		RpcPathVariable pathVariable = parameter.getAnnotation(RpcPathVariable.class);
+		if (pathVariable != null) {
+			processPathVariable(pathVariable, arg, params);
+			return;
+		}
 
-    private void processBodyParameter(RpcBody rpcBody, Object arg, RequestParameters params) {
-        if (arg == null) {
-            return;
-        }
-        
-        switch (rpcBody.value()) {
-            case JSON -> params.bodyPublisher = HttpRequest.BodyPublishers.ofString(
-                    JSONUtil.toJsonStr(arg), Charset.forName(rpcBody.charset()));
-            case INPUT_STREAM -> params.bodyPublisher = createInputStreamPublisher(arg);
-            case TEXT -> processTextBody(arg, rpcBody.charset(), params);
-            case NONE -> params.bodyPublisher = HttpRequest.BodyPublishers.noBody();
-        }
-    }
+		RpcBody rpcBody = parameter.getAnnotation(RpcBody.class);
+		if (rpcBody != null) {
+			processBodyParameter(rpcBody, arg, params);
+			return;
+		}
 
-    private HttpRequest.BodyPublisher createInputStreamPublisher(Object arg) {
-        if (arg instanceof InputStream inputStream) {
-            return HttpRequest.BodyPublishers.ofInputStream(() -> {
-                Thread currentThread = Thread.currentThread();
-                if (currentThread.isInterrupted()) {
-                    try {
-                        inputStream.close();
-                    } catch (Exception ignored) {
-                        // 忽略关闭时的异常
-                    }
-                    throw new RuntimeException("请求被中断");
-                }
-                return inputStream;
-            });
-        }
-        throw new IllegalArgumentException("请求体参数不是InputStream对象");
-    }
+		if (arg instanceof RpcCookie cookies) {
+			params.cookieHead = cookies.getCookies();
+		} else if (arg instanceof RpcHeader rpcHeader) {
+			params.rpcHeaders = rpcHeader;
+		}
+	}
 
-    private void processTextBody(Object arg, String charset, RequestParameters params) {
-        Charset charsetObj = Charset.forName(charset);
-        if (arg instanceof String str) {
-            params.bodyPublisher = HttpRequest.BodyPublishers.ofString(str, charsetObj);
-        } else if (arg instanceof Map<?, ?> map) {
-            StringJoiner joiner = new StringJoiner("&");
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                joiner.add(entry.getKey() + "=" + URLEncoder.encode(String.valueOf(entry.getValue()), charsetObj));
-            }
-            params.bodyPublisher = HttpRequest.BodyPublishers.ofString(joiner.toString(), charsetObj);
-        } else {
-            params.bodyPublisher = HttpRequest.BodyPublishers.ofString(String.valueOf(arg), charsetObj);
-        }
-    }
+	private void processUrlParameter(RpcParam annotation, Object arg, RequestParameters params) {
+		String paraName = annotation.value();
+		if (arg == null && annotation.required()) {
+			throw new IllegalArgumentException(
+					String.format("参数：%s 是必须的，如果不需要此参数，请设置 @RpcParam(required=false)", paraName));
+		}
+		if (arg != null) {
+			params.urlParams.add(paraName + "=" + URLEncoder.encode(String.valueOf(arg), StandardCharsets.UTF_8));
+		}
+	}
 
-    private HttpResponse.BodyHandler<?> selectBodyHandler(Class<?> returnType) {
-        if (InputStream.class.isAssignableFrom(returnType)) {
-            return HttpResponse.BodyHandlers.ofInputStream();
-        } else if (String.class.equals(returnType)) {
-            return HttpResponse.BodyHandlers.ofString();
-        } else if (byte[].class.equals(returnType)) {
-            return HttpResponse.BodyHandlers.ofByteArray();
-        } else {
-            // 默认使用String处理器，后续通过ResponseConverter转换
-            return HttpResponse.BodyHandlers.ofString();
-        }
-    }
+	private void processPathVariable(RpcPathVariable annotation, Object arg, RequestParameters params) {
+		String paraName = annotation.value();
+		if (arg == null && annotation.required()) {
+			throw new IllegalArgumentException(
+					String.format("路径参数：%s 是必须的", paraName));
+		}
+		if (arg != null) {
+			params.pathVariables.put(paraName, URLEncoder.encode(String.valueOf(arg), StandardCharsets.UTF_8));
+		}
+	}
 
-    private String buildTargetUrl(RpcRequestInfo requestInfo, RequestParameters parameters) {
-        String uri = requestInfo.baseUri + requestInfo.rpcMapping.value();
-        
-        // 处理路径变量
-        for (Map.Entry<String, String> entry : parameters.pathVariables.entrySet()) {
-            uri = uri.replace("{" + entry.getKey() + "}", entry.getValue());
-        }
-        
-        // 检查是否还有未处理的路径变量
-        if (uri.matches(".*\\{[^}]+\\}.*")) {
-            throw new IllegalArgumentException("存在未处理的路径变量：" + uri);
-        }
+	private void processBodyParameter(RpcBody rpcBody, Object arg, RequestParameters params) {
+		if (arg == null) {
+			return;
+		}
 
-        if (!parameters.urlParams.toString().isBlank()) {
-            uri = uri + "?" + parameters.urlParams;
-        }
-        return normalizeUrl(this.basURL, uri);
-    }
+		switch (rpcBody.value()) {
+			case JSON -> params.bodyPublisher = HttpRequest.BodyPublishers.ofString(
+					JSONUtil.toJsonStr(arg), Charset.forName(rpcBody.charset()));
+			case INPUT_STREAM -> params.bodyPublisher = createInputStreamPublisher(arg);
+			case TEXT -> processTextBody(arg, rpcBody.charset(), params);
+			case NONE -> params.bodyPublisher = HttpRequest.BodyPublishers.noBody();
+		}
+	}
 
-    private HttpRequestBuilder buildRequestBuilder(
-            String targetUrl, RpcRequestInfo requestInfo, RequestParameters parameters) {
-        var builder = HttpClientUtil.client()
-                .request()
-                .url(targetUrl)
-                .method(requestInfo.rpcMapping.method().name(), parameters.bodyPublisher);
+	private HttpRequest.BodyPublisher createInputStreamPublisher(Object arg) {
+		if (arg instanceof InputStream inputStream) {
+			return HttpRequest.BodyPublishers.ofInputStream(() -> {
+				Thread currentThread = Thread.currentThread();
+				if (currentThread.isInterrupted()) {
+					try {
+						inputStream.close();
+					} catch (Exception ignored) {
+						// 忽略关闭时的异常
+					}
+					throw new RuntimeException("请求被中断");
+				}
+				return inputStream;
+			});
+		}
+		throw new IllegalArgumentException("请求体参数不是InputStream对象");
+	}
 
-        // 设置超时
-        configureTimeout(builder, requestInfo);
+	private void processTextBody(Object arg, String charset, RequestParameters params) {
+		Charset charsetObj = Charset.forName(charset);
+		if (arg instanceof String str) {
+			params.bodyPublisher = HttpRequest.BodyPublishers.ofString(str, charsetObj);
+		} else if (arg instanceof Map<?, ?> map) {
+			StringJoiner joiner = new StringJoiner("&");
+			for (Map.Entry<?, ?> entry : map.entrySet()) {
+				joiner.add(entry.getKey() + "=" + URLEncoder.encode(String.valueOf(entry.getValue()), charsetObj));
+			}
+			params.bodyPublisher = HttpRequest.BodyPublishers.ofString(joiner.toString(), charsetObj);
+		} else {
+			params.bodyPublisher = HttpRequest.BodyPublishers.ofString(String.valueOf(arg), charsetObj);
+		}
+	}
 
-        // 添加头部信息
-        addHeaders(requestInfo.rpcMapping.headers(), builder);
-        addHeaders(requestInfo.rpcClient.headers(), builder);
-        addCookieHeaders(parameters.cookieHead, builder);
-        if (parameters.rpcHeaders != null) {
-            parameters.rpcHeaders.getHeader().forEach(builder::header);
-        }
+	private HttpResponse.BodyHandler<?> selectBodyHandler(Class<?> returnType) {
+		if (InputStream.class.isAssignableFrom(returnType)) {
+			return HttpResponse.BodyHandlers.ofInputStream();
+		} else if (String.class.equals(returnType)) {
+			return HttpResponse.BodyHandlers.ofString();
+		} else if (byte[].class.equals(returnType)) {
+			return HttpResponse.BodyHandlers.ofByteArray();
+		} else {
+			// 默认使用String处理器，后续通过ResponseConverter转换
+			return HttpResponse.BodyHandlers.ofString();
+		}
+	}
 
-        // 处理请求处理器
-        processRequestProcessors(builder);
+	private String buildTargetUrl(RpcRequestInfo requestInfo, RequestParameters parameters) {
+		String uri = requestInfo.baseUri + requestInfo.rpcMapping.value();
 
-        return builder;
-    }
+		// 处理路径变量
+		for (Map.Entry<String, String> entry : parameters.pathVariables.entrySet()) {
+			uri = uri.replace("{" + entry.getKey() + "}", entry.getValue());
+		}
 
-    private Object executeRequest(HttpRequestBuilder builder, Method method, RpcRequestInfo requestInfo) throws IOException, InterruptedException {
-        // 处理void返回类型
-        if (method.getReturnType() == Void.TYPE) {
-            builder.response(HttpResponse.BodyHandlers.discarding()).statusCode();
-            return null;
-        }
+		// 检查是否还有未处理的路径变量
+		if (uri.matches(".*\\{[^}]+\\}.*")) {
+			throw new IllegalArgumentException("存在未处理的路径变量：" + uri);
+		}
 
-        // 选择合适的BodyHandler
-        HttpResponse.BodyHandler<?> bodyHandler = selectBodyHandler(method.getReturnType());
+		if (!parameters.urlParams.toString().isBlank()) {
+			uri = uri + "?" + parameters.urlParams;
+		}
+		return normalizeUrl(this.basURL, uri);
+	}
 
-        // 执行请求
-        int retries = determineRetries(requestInfo.rpcClient);
-        HttpResponse<?> response = executeWithRetry(builder, bodyHandler, retries);
+	private HttpRequestBuilder buildRequestBuilder(
+			String targetUrl, RpcRequestInfo requestInfo, RequestParameters parameters) {
+		var builder = HttpClientUtil.client()
+				.request()
+				.url(targetUrl)
+				.method(requestInfo.rpcMapping.method().name(), parameters.bodyPublisher);
 
-        // 转换响应
-        return ResponseConverter.convert(response, method);
-    }
+		// 设置超时
+		configureTimeout(builder, requestInfo);
 
-    private void configureTimeout(HttpRequestBuilder builder, RpcRequestInfo requestInfo) {
-        long timeout = requestInfo.rpcMapping.timeout();
-        if (timeout <= 0) {
-            timeout = requestInfo.rpcClient.timeout();
-        }
-        if (timeout > 0) {
-            builder.timeout(Duration.ofMillis(timeout));
-        }
-    }
+		// 添加头部信息
+		addHeaders(requestInfo.rpcMapping.headers(), builder);
+		addHeaders(requestInfo.rpcClient.headers(), builder);
+		addCookieHeaders(parameters.cookieHead, builder);
+		if (parameters.rpcHeaders != null) {
+			parameters.rpcHeaders.getHeader().forEach(builder::header);
+		}
 
-    private void addCookieHeaders(Map<String, String> cookieHead, HttpRequestBuilder builder) {
-        if (cookieHead != null && !cookieHead.isEmpty()) {
-            StringJoiner joiner = new StringJoiner("; ");
-            for (Map.Entry<String, String> entry : cookieHead.entrySet()) {
-                joiner.add(entry.getKey() + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
-            }
-            builder.header(RpcCookie.COOKIE, joiner.toString());
-        }
-    }
+		// 处理请求处理器
+		processRequestProcessors(builder);
 
-    private void processRequestProcessors(HttpRequestBuilder builder) {
-        if (!CollUtil.isEmpty(this.rpcProcessors)) {
-            for (var rpcProcessor : this.rpcProcessors) {
-                if (rpcProcessor != null) {
-                    rpcProcessor.processor(builder);
-                }
-            }
-        }
-    }
+		return builder;
+	}
 
-    private int determineRetries(RpcClient rpcClient) {
-        int retries = this.maxRetries;
-        if (retries <= 0) {
-            retries = rpcClient.maxRetries();
-        }
-        return retries;
-    }
+	private Object executeRequest(HttpRequestBuilder builder, Method method, RpcRequestInfo requestInfo) throws Exception {
+		// 处理void返回类型
+		if (method.getReturnType() == Void.TYPE) {
+			builder.response(HttpResponse.BodyHandlers.discarding()).statusCode();
+			return null;
+		}
 
-    private HttpResponse<?> executeWithRetry(
-            HttpRequestBuilder builder, HttpResponse.BodyHandler<?> bodyHandler, int retries) throws IOException, InterruptedException {
-        if (retries <= 0) {
-            return builder.response(bodyHandler);
-        }
-        return retryableInvoke(builder, bodyHandler, retries);
-    }
+		// 选择合适的BodyHandler
+		HttpResponse.BodyHandler<?> bodyHandler = selectBodyHandler(method.getReturnType());
 
-    private HttpResponse<?> retryableInvoke(HttpRequestBuilder builder, HttpResponse.BodyHandler<?> bodyHandler, int maxRetries) {
-        int retryCount = 0;
-        Exception lastException = null;
-        Thread currentThread = Thread.currentThread();
-        
-        while (retryCount < maxRetries) {
-            try {
-                if (currentThread.isInterrupted()) {
-                    throw new RuntimeException("请求被中断");
-                }
-                return builder.response(bodyHandler);
-            } catch (Exception e) {
-                lastException = e;
-                // 检查是否应该重试
-                if (!errorHandler.shouldRetry(e)) {
-                    throw new RuntimeException("不可重试的错误", e);
-                }
-                retryCount++;
-                if (retryCount >= maxRetries) {
-                    break;
-                }
-                try {
-                    Thread.sleep(1000L * retryCount);
-                } catch (InterruptedException ie) {
-                    currentThread.interrupt();
-                    throw new RuntimeException("重试等待被中断", ie);
-                }
-            }
-        }
-        if (currentThread.isInterrupted()) {
-            throw new RuntimeException("请求被中断");
-        }
-        throw new RuntimeException("调用失败，重试" + maxRetries + "次后仍然失败", lastException);
-    }
+		// 执行请求
+		int retries = determineRetries(requestInfo.rpcClient);
+		HttpResponse<?> response = executeWithRetry(builder, bodyHandler, retries);
 
-    private static void addHeaders(String[] headers, HttpRequestBuilder builder) {
-        if (headers == null) {
-            return;
-        }
-        for (String header : headers) {
-            if (header != null && contains(header, ":", "=")) {
-                String[] split = header.split("[:=]");
-                builder.header(split[0].trim(), split[1].trim());
-            }
-        }
-    }
+		// 转换响应
+		return ResponseConverter.convert(response, method);
+	}
 
-    private static boolean contains(String origin, String... chars) {
-        for (String item : chars) {
-            if (origin.contains(item)) {
-                return true;
-            }
-        }
-        return false;
-    }
+	private void configureTimeout(HttpRequestBuilder builder, RpcRequestInfo requestInfo) {
+		long timeout = requestInfo.rpcMapping.timeout();
+		if (timeout <= 0) {
+			timeout = requestInfo.rpcClient.timeout();
+		}
+		if (timeout > 0) {
+			builder.timeout(Duration.ofMillis(timeout));
+		}
+	}
 
-    public void setMaxRetries(int maxRetries) {
-        this.maxRetries = maxRetries;
-    }
+	private void addCookieHeaders(Map<String, String> cookieHead, HttpRequestBuilder builder) {
+		if (cookieHead != null && !cookieHead.isEmpty()) {
+			StringJoiner joiner = new StringJoiner("; ");
+			for (Map.Entry<String, String> entry : cookieHead.entrySet()) {
+				joiner.add(entry.getKey() + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+			}
+			builder.header(RpcCookie.COOKIE, joiner.toString());
+		}
+	}
 
-    public void setBasURL(String basURL) {
-        this.basURL = basURL;
-    }
+	private void processRequestProcessors(HttpRequestBuilder builder) {
+		if (!CollUtil.isEmpty(this.rpcProcessors)) {
+			for (var rpcProcessor : this.rpcProcessors) {
+				if (rpcProcessor != null) {
+					rpcProcessor.processor(builder);
+				}
+			}
+		}
+	}
 
-    private String normalizeUrl(String baseUrl, String uri) {
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-        }
-        if (!uri.startsWith("/")) {
-            uri = "/" + uri;
-        }
-        return baseUrl + uri;
-    }
+	private int determineRetries(RpcClient rpcClient) {
+		int retries = this.maxRetries;
+		if (retries <= 0) {
+			retries = rpcClient.maxRetries();
+		}
+		return retries;
+	}
 
-    public void setErrorHandler(ErrorHandler errorHandler) {
-        this.errorHandler = errorHandler;
-    }
+	private HttpResponse<?> executeWithRetry(
+			HttpRequestBuilder builder, HttpResponse.BodyHandler<?> bodyHandler, int retries) throws Exception {
+		if (retries <= 0) {
+			return builder.response(bodyHandler);
+		}
+		return retryableInvoke(builder, bodyHandler, retries);
+	}
+
+	private HttpResponse<?> retryableInvoke(HttpRequestBuilder builder, HttpResponse.BodyHandler<?> bodyHandler, int maxRetries) throws Exception {
+		int retryCount = 0;
+		Exception lastException = null;
+		Thread currentThread = Thread.currentThread();
+
+		while (retryCount < maxRetries) {
+			try {
+				if (currentThread.isInterrupted()) {
+					throw new InterruptedException("请求被中断");
+				}
+				return builder.response(bodyHandler);
+			} catch (Exception e) {
+				lastException = e;
+				// 检查是否应该重试
+				if (!errorHandler.shouldRetry(e)) {
+					throw new RuntimeException("不可重试的错误", e);
+				}
+				retryCount++;
+				if (retryCount >= maxRetries) {
+					break;
+				}
+				try {
+					Thread.sleep(1000L * retryCount);
+				} catch (InterruptedException ie) {
+					currentThread.interrupt();
+					throw new InterruptedException("重试等待被中断");
+				}
+			}
+		}
+		if (currentThread.isInterrupted()) {
+			throw new InterruptedException("请求被中断");
+		}
+		throw new RuntimeException("调用失败，重试" + maxRetries + "次后仍然失败", lastException);
+	}
+
+	private static void addHeaders(String[] headers, HttpRequestBuilder builder) {
+		if (headers == null) {
+			return;
+		}
+		for (String header : headers) {
+			if (header != null && contains(header, ":", "=")) {
+				String[] split = header.split("[:=]");
+				builder.header(split[0].trim(), split[1].trim());
+			}
+		}
+	}
+
+	private static boolean contains(String origin, String... chars) {
+		for (String item : chars) {
+			if (origin.contains(item)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void setMaxRetries(int maxRetries) {
+		this.maxRetries = maxRetries;
+	}
+
+	public void setBasURL(String basURL) {
+		this.basURL = basURL;
+	}
+
+	private String normalizeUrl(String baseUrl, String uri) {
+		if (baseUrl.endsWith("/")) {
+			baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+		}
+		if (!uri.startsWith("/")) {
+			uri = "/" + uri;
+		}
+		return baseUrl + uri;
+	}
+
+	public void setErrorHandler(ErrorHandler errorHandler) {
+		this.errorHandler = errorHandler;
+	}
 
 }
 

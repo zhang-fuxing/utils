@@ -1,18 +1,14 @@
 package com.zhangfuxing.tools.rpc.error;
 
+import com.zhangfuxing.tools.rpc.RpcException;
+
+import java.lang.reflect.Method;
+
 /**
  * RPC 错误处理接口
  */
 public interface ErrorHandler {
-    /**
-     * 处理错误
-     *
-     * @param error 异常
-     * @param serviceName 服务名称
-     * @param methodName 方法名称
-     * @param args 方法参数
-     */
-    void handleError(Throwable error, String serviceName, String methodName, Object[] args);
+    RpcException wrapException(Exception ex, String url, Method method);
 
     /**
      * 是否重试该错误
