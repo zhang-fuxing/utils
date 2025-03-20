@@ -1,6 +1,7 @@
 package com.zhangfuxing.tools.util;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.collections4.list.TreeList;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -22,8 +23,9 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -972,6 +974,248 @@ public class ITools {
 				throw new RuntimeException("解密失败", e);
 			}
 		}
+	}
+
+	public static class Tree {
+		public static <T> Source<T> builder(Collection<T> collection) {
+			return new Source<>(collection);
+		}
+
+		public static final class Source<T> {
+			private final Collection<T> source;
+
+			public Source(Collection<T> source) {
+				this.source = source;
+			}
+
+			/**
+			 * 当前节点是否是根节点
+			 *
+			 * @param rootPredicate 根节点判断
+			 * @return RootElement
+			 */
+			public RootElement<T> isRootEl(Predicate<T> rootPredicate) {
+				return new RootElement<>(source, rootPredicate);
+			}
+
+		}
+
+		public static final class RootElement<T> {
+			private final Collection<T> source;
+			private final Predicate<T> rootPredicate;
+
+			public RootElement(Collection<T> source, Predicate<T> rootPredicate) {
+				this.source = source;
+				this.rootPredicate = rootPredicate;
+			}
+
+			/**
+			 * 提取出元素id
+			 *
+			 * @param extractIdFunc 提取id方法
+			 * @return IdRecord
+			 */
+			public IdRecord<T> extractId(Function<T, ?> extractIdFunc) {
+				return new IdRecord<>(source, rootPredicate, extractIdFunc);
+			}
+
+		}
+
+		public static final class IdRecord<T> {
+			private final Collection<T> source;
+			private final Predicate<T> rootPredicate;
+			private final Function<T, ?> extractIdFunc;
+
+			public IdRecord(Collection<T> source,
+							Predicate<T> rootPredicate,
+							Function<T, ?> extractIdFunc) {
+				this.source = source;
+				this.rootPredicate = rootPredicate;
+				this.extractIdFunc = extractIdFunc;
+			}
+
+			/**
+			 * 提取出元素父id
+			 *
+			 * @param extractParentIdFunc 提取父id方法
+			 * @return ParentRecord
+			 */
+			public ParentRecord<T> extractParent(Function<T, ?> extractParentIdFunc) {
+				return new ParentRecord<>(source, rootPredicate, extractIdFunc, extractParentIdFunc);
+			}
+
+		}
+
+		public static final class ParentRecord<T> {
+			private final Collection<T> source;
+			private final Predicate<T> rootPredicate;
+			private final Function<T, ?> extractIdFunc;
+			private final Function<T, ?> extractParentIdFunc;
+
+			public ParentRecord(Collection<T> source,
+								Predicate<T> rootPredicate,
+								Function<T, ?> extractIdFunc,
+								Function<T, ?> extractParentIdFunc) {
+				this.source = source;
+				this.rootPredicate = rootPredicate;
+				this.extractIdFunc = extractIdFunc;
+				this.extractParentIdFunc = extractParentIdFunc;
+			}
+
+			/**
+			 * 将当前元素添加到父元素的children元素中
+			 *
+			 * @param addChildFunc 添加子节点方法
+			 * @return ChildRecord
+			 */
+			public ChildRecord<T> addChild(BiConsumer<T, T> addChildFunc) {
+				return new ChildRecord<>(source, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc);
+			}
+
+		}
+
+		public static final class ChildRecord<T> {
+			private final Collection<T> source;
+			private final Predicate<T> rootPredicate;
+			private final Function<T, ?> extractIdFunc;
+			private final Function<T, ?> extractParentIdFunc;
+			private final BiConsumer<T, T> addChildFunc;
+
+			public ChildRecord(Collection<T> source,
+							   Predicate<T> rootPredicate,
+							   Function<T, ?> extractIdFunc,
+							   Function<T, ?> extractParentIdFunc,
+							   BiConsumer<T, T> addChildFunc) {
+				this.source = source;
+				this.rootPredicate = rootPredicate;
+				this.extractIdFunc = extractIdFunc;
+				this.extractParentIdFunc = extractParentIdFunc;
+				this.addChildFunc = addChildFunc;
+			}
+
+			/**
+			 * 构建出树形列表
+			 *
+			 * @return Collection
+			 */
+			public Collection<T> build() {
+				return buildTree(source, ArrayList::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, true);
+			}
+
+			/**
+			 * 构建树， 默认返回ArrayList， 返回类型可自定义
+			 *
+			 * @param listType            1: TreeList, 2: LinkedList, 3: CopyOnWriteArrayList other: ArrayList
+			 * @param noneParentAddToRoot 是否将没有父节点的元素添加到根节点
+			 * @return List
+			 */
+			public List<T> buildAsList(int listType, boolean noneParentAddToRoot) {
+				return switch (listType) {
+					case 1 ->
+							new TreeList<>(buildTree(source, TreeList::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, noneParentAddToRoot));
+					case 2 ->
+							new LinkedList<>(buildTree(source, LinkedList::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, noneParentAddToRoot));
+					case 3 ->
+							new CopyOnWriteArrayList<>(buildTree(source, CopyOnWriteArrayList::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, noneParentAddToRoot));
+					default ->
+							new ArrayList<>(buildTree(source, ArrayList::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, noneParentAddToRoot));
+				};
+			}
+
+			/**
+			 * 构建树，返回 ArrayList
+			 *
+			 * @param noneParentAddToRoot 是否将没有父节点的元素添加到根节点
+			 * @return ArrayList
+			 */
+			public List<T> buildAsList(boolean noneParentAddToRoot) {
+				return buildAsList(0, noneParentAddToRoot);
+			}
+
+			/**
+			 * 构建树，返回 ArrayList， 默认将没有父节点的元素添加到根节点
+			 *
+			 * @return ArrayList
+			 */
+			public List<T> buildAsList() {
+				return buildAsList(0, true);
+			}
+
+			/**
+			 * 构建树， 默认返回HashSet， 返回类型可自定义
+			 *
+			 * @param setType             1: TreeSet, 2: LinkedHashSet, 3: CopyOnWriteArraySet other: HashSet
+			 * @param noneParentAddToRoot 是否将没有父节点的元素添加到根节点
+			 * @return Set
+			 */
+			public Set<T> buildAsSet(int setType, boolean noneParentAddToRoot) {
+				return switch (setType) {
+					case 1 ->
+							new TreeSet<>(buildTree(source, TreeSet::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, noneParentAddToRoot));
+					case 2 ->
+							new LinkedHashSet<>(buildTree(source, LinkedHashSet::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, noneParentAddToRoot));
+					case 3 ->
+							new CopyOnWriteArraySet<>(buildTree(source, CopyOnWriteArraySet::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, noneParentAddToRoot));
+					default ->
+							new HashSet<>(buildTree(source, HashSet::new, rootPredicate, extractIdFunc, extractParentIdFunc, addChildFunc, noneParentAddToRoot));
+				};
+			}
+
+			/**
+			 * 构建树，返回 HashSet
+			 *
+			 * @param noneParentAddToRoot 是否将没有父节点的元素添加到根节点
+			 * @return HashSet
+			 */
+			public Set<T> buildAsSet(boolean noneParentAddToRoot) {
+				return buildAsSet(0, noneParentAddToRoot);
+			}
+
+			/**
+			 * 构建树，返回 HashSet， 默认将没有父节点的元素添加到根节点
+			 *
+			 * @return HashSet
+			 */
+			public Set<T> buildAsSet() {
+				return buildAsSet(0, true);
+			}
+		}
+
+		private static <T> Collection<T> buildTree(Collection<T> source,
+												   Supplier<Collection<T>> rootSupplier,
+												   Predicate<T> isRootItem,
+												   Function<T, ?> uniqueKey,
+												   Function<T, ?> parentKey,
+												   BiConsumer<T, T> addChild,
+												   boolean noneParentAddToRoot) {
+			Collection<T> root = rootSupplier.get();
+			if (source == null || source.isEmpty()) {
+				return root;
+			}
+			Map<Object, T> map = new HashMap<>();
+			for (T item : source) {
+				Object apply = uniqueKey.apply(item);
+				map.put(apply, item);
+			}
+
+			for (T item : source) {
+				if (isRootItem.test(item)) {
+					root.add(item);
+					continue;
+				}
+				Object parentId = parentKey.apply(item);
+				T parent = map.get(parentId);
+				if (parent == null) {
+					if (noneParentAddToRoot) {
+						root.add(item);
+					}
+					continue;
+				}
+				addChild.accept(parent, item);
+			}
+			return root;
+		}
+
 	}
 
 	public static class Close {
