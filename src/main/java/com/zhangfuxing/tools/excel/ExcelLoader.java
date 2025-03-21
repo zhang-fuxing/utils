@@ -8,6 +8,10 @@ import cn.hutool.poi.excel.sax.handler.RowHandler;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -309,7 +313,29 @@ public class ExcelLoader {
 						entry.getValue().accept(instance, list.get(index));
 					}
 				}
-				result.add(instance);
+
+				Class<?> clazz = instance.getClass();
+				List<Field> fieldList = Arrays.stream(clazz.getDeclaredFields())
+						.filter(f -> !Modifier.isStatic(f.getModifiers()))
+						.filter(f -> !Modifier.isFinal(f.getModifiers()))
+						.toList();
+				boolean allNull = true;
+				for (Field field : fieldList) {
+					try {
+						MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
+						VarHandle varHandle = lookup.findVarHandle(clazz, field.getName(), field.getType());
+						if (varHandle.get(instance) != null) {
+							allNull = false;
+						}
+
+					} catch (Throwable e) {
+						throw new RuntimeException(e);
+					}
+
+				}
+				if (!allNull) {
+					result.add(instance);
+				}
 			};
 		}
 
