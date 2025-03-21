@@ -1,7 +1,6 @@
 package com.zhangfuxing.tools.io;
 
 
-import com.zhangfuxing.tools.util.CloseUtil;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -58,10 +57,17 @@ public class RandomResource implements Closeable{
             exceptionHandler.accept(e);
         } finally {
             if (close) {
-                CloseUtil.close(exceptionHandler, out);
+                close(out);
             }
         }
         return this;
+    }
+
+    private void close(Closeable out) {
+        try (out) {
+        } catch (IOException e) {
+            exceptionHandler.accept(e);
+        }
     }
 
     public RandomResource readAll(OutputStream out) {
@@ -203,14 +209,14 @@ public class RandomResource implements Closeable{
             exceptionHandler.accept(e);
         } finally {
             if (close) {
-                CloseUtil.close(exceptionHandler, out);
+                close(out);
             }
         }
     }
 
 
     @Override
-    public void close() {
-        CloseUtil.close(exceptionHandler, raf);
+    public void close() throws IOException {
+        close(raf);
     }
 }

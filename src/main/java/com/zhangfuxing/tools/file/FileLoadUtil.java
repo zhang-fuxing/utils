@@ -2,7 +2,7 @@ package com.zhangfuxing.tools.file;
 
 
 import com.zhangfuxing.tools.io.ReadResource;
-import com.zhangfuxing.tools.util.Str;
+import com.zhangfuxing.tools.util.ITools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +98,7 @@ public class FileLoadUtil {
             File file = new File(findPath, filepath);
             if (file.exists() && file.isFile()) {
                 inputStream = new FileInputStream(file);
-                Optional.ofNullable(atomicString).ifPresent(a -> a.set(Str.appendURI(findPath, filepath)));
+                Optional.ofNullable(atomicString).ifPresent(a -> a.set(ITools.Str.buildURL(findPath, filepath)));
                 break;
             }
 
@@ -110,11 +110,11 @@ public class FileLoadUtil {
     }
 
     public static InputStream loadFile(String filepath, String location) throws FileNotFoundException {
-        return load(filepath, null, Str.isBlank(location) ? findPath : new String[]{location});
+        return load(filepath, null, ITools.Str.isBlank(location) ? findPath : new String[]{location});
     }
 
     public static InputStream loadFile(String filepath, AtomicReference<String> loadPath, String location) throws FileNotFoundException {
-        return load(filepath, loadPath, Str.isBlank(location) ? findPath : new String[]{location});
+        return load(filepath, loadPath, ITools.Str.isBlank(location) ? findPath : new String[]{location});
     }
 
     public static InputStream loadFile(String filepath) throws FileNotFoundException {
@@ -123,7 +123,7 @@ public class FileLoadUtil {
 
     public static String getLoadFilePath(String filepath, String location) {
         AtomicReference<String> atomicString = new AtomicReference<>("");
-        try (InputStream inputStream = load(filepath, atomicString, Str.isBlank(location) ? findPath : new String[]{location})) {
+        try (InputStream inputStream = load(filepath, atomicString, ITools.Str.isBlank(location) ? findPath : new String[]{location})) {
             return atomicString.get();
         } catch (IOException e) {
             log.error("加载文件失败，msg={}", e.getMessage());

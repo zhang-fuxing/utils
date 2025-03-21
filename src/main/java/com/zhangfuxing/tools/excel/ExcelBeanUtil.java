@@ -41,11 +41,11 @@ public class ExcelBeanUtil {
 	}
 
 	public static <T> List<T> readBean(String filepath, Supplier<T> beanSupplier) {
-		return readBean(filepath, beanSupplier, 0);
+		return readBean(filepath, beanSupplier, -1);
 	}
 
 	public static <T> List<T> readBean(File file, Supplier<T> beanSupplier) {
-		return readBean(file, beanSupplier, 0);
+		return readBean(file, beanSupplier, -1);
 	}
 
 	public static <T> List<T> readBean(InputStream inputStream, Supplier<T> beanSupplier, int rid) {
@@ -55,7 +55,7 @@ public class ExcelBeanUtil {
 	}
 
 	public static <T> List<T> readBean(InputStream inputStream, Supplier<T> beanSupplier) {
-		return readBean(inputStream, beanSupplier, 0);
+		return readBean(inputStream, beanSupplier, -1);
 	}
 
 	/**
@@ -135,6 +135,7 @@ public class ExcelBeanUtil {
 	 */
 	public static void writeToXlsx(List<List<?>> rowList, OutputStream outputStream, boolean autoClose) {
 		try (ExcelWriter writer = ExcelUtil.getWriter(true)) {
+			writer.setSheet(0);
 			if (CollUtil.isNotEmpty(rowList)) {
 				for (List<?> objects : rowList) {
 					writer.writeRow(objects);
@@ -204,6 +205,37 @@ public class ExcelBeanUtil {
 	 */
 	public static <T> void writeToXlsx(Supplier<T> beanSupplier, List<T> contentList, OutputStream outputStream) {
 		writeToXlsx(beanSupplier, contentList, outputStream, true);
+	}
+
+	/**
+	 * 根据Java类创建Excel模板，并写入输出流中, 会根据 ExcelHeader 注解的index属性排序, example = "示例"
+	 *
+	 * @param outputStream 输出流
+	 * @param beanSupplier BeanSupplier
+	 */
+	public static <T> void writeTemplate(Supplier<T> beanSupplier, OutputStream outputStream, boolean autoClose) {
+		T instance = beanSupplier.get();
+		List<Field> fieldList = Arrays.stream(instance.getClass().getDeclaredFields())
+				.filter(field -> field.isAnnotationPresent(ExcelHeader.class))
+				.sorted(Comparator.comparingInt(field -> field.getAnnotation(ExcelHeader.class).index()))
+				.toList();
+		List<List<?>> content = new ArrayList<>();
+		List<String> headers = new ArrayList<>();
+		List<String> examples = new ArrayList<>();
+
+		for (Field field : fieldList) {
+			ExcelHeader header = field.getAnnotation(ExcelHeader.class);
+			String value = header.value();
+			if (value.isBlank()) {
+				value = field.getName();
+			}
+			String example = header.example();
+			headers.add(value);
+			examples.add(example);
+		}
+		content.add(headers);
+		content.add(examples);
+		writeToXlsx(content, outputStream, autoClose);
 	}
 
 	/**

@@ -1,16 +1,14 @@
 package com.zhangfuxing.tools.net;
 
-import com.zhangfuxing.tools.date.LocalDateUtil;
 import com.zhangfuxing.tools.io.Model;
 import com.zhangfuxing.tools.io.RandomResource;
-import com.zhangfuxing.tools.util.Str;
+import com.zhangfuxing.tools.util.ITools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 
 /**
  * @author 张福兴
@@ -28,8 +26,8 @@ public class BreakPointDownloadSupport {
                 log.error("文件资源读取异常：msg={}, type={}", e.getMessage(), e.getClass().getName(), e));
         response.setContentType("application/octet-stream");
         response.setHeader("Accept-Ranges", "bytes");
-        response.setHeader("Last-Modified", LocalDateUtil.toLocalDateTime(new Date()).toString());
-        response.setHeader("Content-Disposition", "attachment; filename=" + "\"" + Str.URLEncode(file.getName()) + "\"");
+        response.setHeader("Last-Modified", ITools.DateTime.format());
+        response.setHeader("Content-Disposition", "attachment; filename=" + "\"" + ITools.Str.encodeUrl(file.getName()) + "\"");
         long fileLength = file.length();
         response.setContentLengthLong(fileLength);
 
@@ -72,8 +70,8 @@ public class BreakPointDownloadSupport {
                 log.error("文件资源读取异常：msg={}, type={}", e.getMessage(), e.getClass().getName(), e));
         response.setContentType("application/octet-stream");
         response.setHeader("Accept-Ranges", "bytes");
-        response.setHeader("Last-Modified", LocalDateUtil.toLocalDateTime(new Date()).toString());
-        response.setHeader("Content-Disposition", "attachment; filename=" + "\"" + Str.URLEncode(file.getName()) + "\"");
+        response.setHeader("Last-Modified", ITools.DateTime.format());
+        response.setHeader("Content-Disposition", "attachment; filename=" + "\"" + ITools.Str.encodeUrl(file.getName()) + "\"");
         long fileLength = file.length();
         response.setContentLengthLong(fileLength);
 

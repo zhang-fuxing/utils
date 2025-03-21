@@ -1,8 +1,12 @@
 package com.zhangfuxing.tools.file;
 
-import com.zhangfuxing.tools.util.Str;
 
-import java.io.*;
+import com.zhangfuxing.tools.util.ITools;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
@@ -90,7 +94,7 @@ public class Fs {
     }
 
     public static List<File> find(String findPath, int depth, Predicate<File> matchRole, FileVisitOption... options) throws IOException {
-        if (Str.isBlank(findPath)) {
+        if (ITools.Str.isBlank(findPath)) {
             throw new IllegalArgumentException("未指定查找路径");
         }
         Stream<Path> walk = Files.walk(Path.of(findPath), depth, options);
@@ -154,7 +158,7 @@ public class Fs {
     }
 
     public static String getName(String path) {
-        if (Str.isBlank(path)) return "";
+        if (ITools.Str.isBlank(path)) return "";
         return new File(path).getName();
     }
 }

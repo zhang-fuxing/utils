@@ -18,5 +18,25 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface ExcelHeader {
+
+	/**
+	 * Excel列名
+	 *
+	 * @return 默认为字段名
+	 */
 	String value() default "";
+
+	/**
+	 * 导出到excel时表头的顺序
+	 *
+	 * @return 默认为100，越小越靠前
+	 */
+	int index() default 100;
+
+	/**
+	 * 导出到excel时表头的示例
+	 *
+	 * @return 默认为空
+	 */
+	String example() default "";
 }

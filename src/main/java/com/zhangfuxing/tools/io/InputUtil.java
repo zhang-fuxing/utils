@@ -1,6 +1,5 @@
 package com.zhangfuxing.tools.io;
 
-import com.zhangfuxing.tools.util.CloseUtil;
 
 import java.io.*;
 import java.util.Arrays;
@@ -66,7 +65,7 @@ public class InputUtil {
         try {
             return readString(in);
         } finally {
-            CloseUtil.close(in);
+            close(in);
         }
     }
 
@@ -79,7 +78,7 @@ public class InputUtil {
         try {
             return readString(in, encoding);
         } finally {
-            CloseUtil.close(in);
+            close(in);
         }
     }
 
@@ -99,8 +98,12 @@ public class InputUtil {
     private static void close(Closeable in) {
         if (!autoClose) {
             if (in != null) {
-                CloseUtil.close(exceptionHandler, in);
-            }
+				try {
+					in.close();
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
         }
     }
 }
