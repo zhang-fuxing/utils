@@ -164,7 +164,9 @@ public class ExcelLoader {
 	public static class BeanLoader<T> {
 		Supplier<T> beanSupplier;
 		Map<String, BiConsumer<T, Object>> columnMapping;
-
+		boolean inited = false;
+		Map<String, Integer> headerIndex = new HashMap<>();
+		Set<String> headers;
 		public BeanLoader(Supplier<T> beanSupplier) {
 			this.beanSupplier = beanSupplier;
 			this.columnMapping = new HashMap<>();
@@ -282,11 +284,11 @@ public class ExcelLoader {
 		 * @return 行处理器
 		 */
 		private RowHandler getRowHandler(List<T> result) {
-			Map<String, Integer> headerIndex = new HashMap<>();
-			final Set<String> headers = columnMapping.keySet();
+			init();
 			return (sheetIndex, rowIndex, rowList) -> {
 				List<String> list = rowList.stream().map(Object::toString).toList();
-				if (CollUtil.containsAny(headers, list)) {
+				if (CollUtil.containsAny(headers, list) && !inited) {
+					inited = true;
 					// 转换list为map
 					Map<String, Integer> originMap = new HashMap<>();
 					for (int i = 0; i < list.size(); i++) {
@@ -309,6 +311,13 @@ public class ExcelLoader {
 				}
 				result.add(instance);
 			};
+		}
+
+		private void init() {
+			if (inited) {
+				return;
+			}
+			this.headers = columnMapping.keySet();
 		}
 
 	}
