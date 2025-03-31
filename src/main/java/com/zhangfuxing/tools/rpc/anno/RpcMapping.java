@@ -2,10 +2,7 @@ package com.zhangfuxing.tools.rpc.anno;
 
 import com.zhangfuxing.tools.rpc.Method;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 import static com.zhangfuxing.tools.rpc.Method.GET;
 
@@ -15,6 +12,7 @@ import static com.zhangfuxing.tools.rpc.Method.GET;
  * @date 2024/10/15
  * @email zhangfuxing1010@163.com
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface RpcMapping {

@@ -11,9 +11,9 @@ import com.zhangfuxing.tools.rpc.error.DefaultErrorHandler;
 import com.zhangfuxing.tools.rpc.error.ErrorHandler;
 
 import java.io.InputStream;
-import java.lang.reflect.InvocationHandler;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.*;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -80,7 +80,7 @@ public class RpcInvocationHandler implements InvocationHandler {
 		String baseUri = Optional.ofNullable(declaringClass.getAnnotation(RpcMapping.class))
 				.map(RpcMapping::value)
 				.orElse("");
-		RpcMapping rpcMapping = method.getAnnotation(RpcMapping.class);
+		RpcMapping rpcMapping = getAnnotation(method, RpcMapping.class);
 		return new RpcRequestInfo(rpcClient, rpcMapping, baseUri);
 	}
 
@@ -191,14 +191,35 @@ public class RpcInvocationHandler implements InvocationHandler {
 		}
 	}
 
-	private HttpResponse.BodyHandler<?> selectBodyHandler(Class<?> returnType) {
+	private HttpResponse.BodyHandler<?> selectBodyHandler(Method method) {
+		Class<?> returnType = method.getReturnType();
+		Type type = method.getGenericReturnType();
 		if (InputStream.class.isAssignableFrom(returnType)) {
 			return HttpResponse.BodyHandlers.ofInputStream();
-		} else if (String.class.equals(returnType)) {
+		}
+		// String
+		else if (String.class.equals(returnType)) {
 			return HttpResponse.BodyHandlers.ofString();
-		} else if (byte[].class.equals(returnType)) {
+		}
+		// byte
+		else if (byte[].class.equals(returnType)) {
 			return HttpResponse.BodyHandlers.ofByteArray();
-		} else {
+		}
+		// ref
+		else if (returnType.isAssignableFrom(Ref.class) && type instanceof ParameterizedType pt) {
+			Type actualType = pt.getActualTypeArguments()[0];
+			if (InputStream.class.getTypeName().equals(actualType.getTypeName())) {
+				return HttpResponse.BodyHandlers.ofInputStream();
+			} else if (String.class.getTypeName().equals(actualType.getTypeName())) {
+				return HttpResponse.BodyHandlers.ofString();
+			} else if (byte[].class.getTypeName().equals(actualType.getTypeName())) {
+				return HttpResponse.BodyHandlers.ofByteArray();
+			} else {
+				return HttpResponse.BodyHandlers.ofString();
+			}
+		}
+		// default
+		else {
 			// 默认使用String处理器，后续通过ResponseConverter转换
 			return HttpResponse.BodyHandlers.ofString();
 		}
@@ -255,7 +276,7 @@ public class RpcInvocationHandler implements InvocationHandler {
 		}
 
 		// 选择合适的BodyHandler
-		HttpResponse.BodyHandler<?> bodyHandler = selectBodyHandler(method.getReturnType());
+		HttpResponse.BodyHandler<?> bodyHandler = selectBodyHandler(method);
 
 		// 执行请求
 		int retries = determineRetries(requestInfo.rpcClient);
@@ -387,6 +408,64 @@ public class RpcInvocationHandler implements InvocationHandler {
 
 	public void setErrorHandler(ErrorHandler errorHandler) {
 		this.errorHandler = errorHandler;
+	}
+
+
+	public static <T extends Annotation> T getAnnotation(Method method, Class<T> annotationClass) {
+		T annotation = method.getAnnotation(annotationClass);
+		if (annotation != null) {
+			return annotation;
+		}
+		for (Annotation anno : method.getAnnotations()) {
+			T metaAnnotation = anno.annotationType().getAnnotation(annotationClass);
+			if (metaAnnotation != null) {
+				return buildSynthesizedAnnotationImpl(anno, metaAnnotation);
+			}
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T extends Annotation> T buildSynthesizedAnnotationImpl(Annotation childAnnotation, T metaAnnotation) {
+		return (T) Proxy.newProxyInstance(
+				childAnnotation.annotationType().getClassLoader(),
+				new Class<?>[]{metaAnnotation.annotationType()},
+				new AnnotationInvocationHandler<>(childAnnotation, metaAnnotation));
+	}
+
+	// 辅助处理类（推荐封装为内部类）
+	private record AnnotationInvocationHandler<A extends Annotation, M extends Annotation>
+			(A childAnnotation, M metaAnnotation) implements InvocationHandler {
+
+		@Override
+		public Object invoke(Object proxy, Method method, Object[] args)
+				throws Throwable {
+			// 排除默认方法和Object方法
+			if (method.getDeclaringClass() == Object.class) {
+				return method.invoke(this, args);
+			}
+
+			try {
+				// 1. 优先获取子注解的属性值
+				Method childMethod = childAnnotation.annotationType()
+						.getMethod(method.getName());
+				Object value = childMethod.invoke(childAnnotation);
+				if (value != null) {
+					return value;
+				}
+			} catch (Exception ignored) {
+				// 若子注解无该属性则忽略
+			}
+
+			// 2. 尝试获取元注解的默认值
+			try {
+				Method metaMethod = metaAnnotation.annotationType()
+						.getMethod(method.getName());
+				return metaMethod.invoke(metaAnnotation);
+			} catch (Exception e) {
+				throw new RuntimeException("元注解属性获取失败", e);
+			}
+		}
 	}
 
 }

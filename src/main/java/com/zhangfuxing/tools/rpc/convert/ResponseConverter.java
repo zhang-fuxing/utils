@@ -6,6 +6,8 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.zhangfuxing.tools.excep.RemoteServiceCallException;
 import com.zhangfuxing.tools.rpc.Ref;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -19,6 +21,7 @@ import java.util.Objects;
  * 响应消息转换器
  */
 public class ResponseConverter {
+	private static final Logger log = LoggerFactory.getLogger(ResponseConverter.class);
 	private static final String DATA = "data";
 	private static final String LIST = "list";
 	private static final String RECORDS = "records";
@@ -36,6 +39,8 @@ public class ResponseConverter {
 		if (response == null || response.statusCode() != 200) {
 			throw new RemoteServiceCallException("HTTP请求失败，状态码：" + (response != null ? response.statusCode() : "null"));
 		}
+		log.warn("Request {} {}: {}, status={}", response.version().toString().toLowerCase(),
+				response.request().method(), response.uri(), response.statusCode());
 
 		Class<?> returnType = method.getReturnType();
 		Type genericReturnType = method.getGenericReturnType();
@@ -83,20 +88,29 @@ public class ResponseConverter {
 
 		// 5. 处理JSON转换
 		try {
+			// 响应体是String
 			if (body instanceof String stringBody) {
 				if (isJsonString(stringBody)) {
 					return convertFromJson(stringBody, method);
+				} else if (returnType.isAssignableFrom(Ref.class)) {
+					return new Ref<>(stringBody);
 				} else {
 					// 如果不是JSON字符串，直接返回字符串
 					return stringBody;
+				}
+			}
+			// 响应体不是String
+			else {
+				if (returnType.isAssignableFrom(Ref.class)) {
+					return new Ref<>(body);
+				} else {
+					return body;
 				}
 			}
 		} catch (Exception e) {
 			// JSON转换失败，返回原始内容
 			return body;
 		}
-
-		return body;
 	}
 
 	private static boolean isJsonString(String str) {

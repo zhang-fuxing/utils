@@ -27,7 +27,7 @@ public class BreakPointDownloadSupport {
         response.setContentType("application/octet-stream");
         response.setHeader("Accept-Ranges", "bytes");
         response.setHeader("Last-Modified", ITools.DateTime.format());
-        response.setHeader("Content-Disposition", "attachment; filename=" + "\"" + ITools.Str.encodeUrl(file.getName()) + "\"");
+        response.setHeader("Content-Disposition", "attachment; filename=" + "\"" + ITools.StrTools.encodeUrl(file.getName()) + "\"");
         long fileLength = file.length();
         response.setContentLengthLong(fileLength);
 
@@ -71,7 +71,7 @@ public class BreakPointDownloadSupport {
         response.setContentType("application/octet-stream");
         response.setHeader("Accept-Ranges", "bytes");
         response.setHeader("Last-Modified", ITools.DateTime.format());
-        response.setHeader("Content-Disposition", "attachment; filename=" + "\"" + ITools.Str.encodeUrl(file.getName()) + "\"");
+        response.setHeader("Content-Disposition", "attachment; filename=" + "\"" + ITools.StrTools.encodeUrl(file.getName()) + "\"");
         long fileLength = file.length();
         response.setContentLengthLong(fileLength);
 

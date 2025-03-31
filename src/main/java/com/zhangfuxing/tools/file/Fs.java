@@ -94,7 +94,7 @@ public class Fs {
     }
 
     public static List<File> find(String findPath, int depth, Predicate<File> matchRole, FileVisitOption... options) throws IOException {
-        if (ITools.Str.isBlank(findPath)) {
+        if (ITools.StrTools.isBlank(findPath)) {
             throw new IllegalArgumentException("未指定查找路径");
         }
         Stream<Path> walk = Files.walk(Path.of(findPath), depth, options);
@@ -158,7 +158,7 @@ public class Fs {
     }
 
     public static String getName(String path) {
-        if (ITools.Str.isBlank(path)) return "";
+        if (ITools.StrTools.isBlank(path)) return "";
         return new File(path).getName();
     }
 }
