@@ -1,5 +1,6 @@
 package com.zhangfuxing.tools.rpc.anno;
 
+import com.zhangfuxing.tools.annotations.AliasFor;
 import com.zhangfuxing.tools.rpc.Method;
 
 import java.lang.annotation.ElementType;
@@ -17,6 +18,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface PostRpcMapping {
+	@AliasFor(attribute = "value", annotation = RpcMapping.class)
 	String value() default "";
 
 	String[] headers() default {"Content-Type: application/json"};

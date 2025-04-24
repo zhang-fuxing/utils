@@ -397,6 +397,80 @@ public class ITools {
 			}
 			return Arrays.stream(objs).map(StrTools::toString).collect(Collectors.joining(separator));
 		}
+
+		public static boolean eq(CharSequence s1, CharSequence s2) {
+			return eq(s1, s2, false);
+		}
+
+		public static boolean eq(CharSequence s1, CharSequence s2, boolean ignoreCase) {
+			if (s1 == null && s2 == null) {
+				return true;
+			}
+			if (s1 == null || s2 == null) {
+				return false;
+			}
+			return ignoreCase ? s1.toString().equalsIgnoreCase(s2.toString()) : s1.toString().contentEquals(s2);
+		}
+
+		public static boolean ne(CharSequence s1, CharSequence s2) {
+			return ne(s1, s2, false);
+		}
+
+		public static boolean ne(CharSequence s1, CharSequence s2, boolean ignoreCase) {
+			return !eq(s1, s2, ignoreCase);
+		}
+
+		public static boolean eqAny(CharSequence s1, CharSequence... s2) {
+			return eqAny(false, s1, s2);
+		}
+
+		public static boolean eqAny(boolean ignoreCase, CharSequence s1, CharSequence... s2) {
+			for (CharSequence s : s2) {
+				if (eq(s1, s, ignoreCase)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public static boolean like(String source, String pattern) {
+			return like(source, pattern, false);
+		}
+
+		public static boolean like(String source, String pattern, boolean ignoreCase) {
+			if (StrTools.isEmpty(source) || StrTools.isEmpty(pattern)) {
+				return false;
+			}
+			// 转义正则特殊字符（除通配符外）
+			String regex = Pattern.compile("([\\\\.\\[\\]{}()+^$|])")
+					.matcher(pattern)
+					.replaceAll("\\\\$1")
+					.replace("_", ".")
+					.replace("%", ".*");
+
+			// 添加全匹配锚点
+			if (!regex.startsWith("^")) regex = "^" + regex;
+			if (!regex.endsWith("$")) regex += "$";
+
+			// 处理大小写
+			int flags = ignoreCase ? Pattern.CASE_INSENSITIVE : 0;
+			return Pattern.compile(regex, flags).matcher(source).matches();
+		}
+
+		public static boolean in(String source, String childrenString, boolean ignoreCase) {
+			if (StrTools.isEmpty(source)) {
+				return false;
+			}
+			if (StrTools.isEmpty(childrenString)) {
+				return true;
+			}
+			return ignoreCase ? source.toLowerCase().contains(childrenString.toLowerCase()) : source.contains(childrenString);
+		}
+
+		public static boolean in(String source, String childrenString) {
+			return in(source, childrenString, false);
+		}
+
 	}
 
 	/**
@@ -1928,7 +2002,7 @@ public class ITools {
 			return null;
 		}
 
-		public static <T extends Annotation> T getAnnoOnParameter(Method method, int index,Class<T> annotationClass) {
+		public static <T extends Annotation> T getAnnoOnParameter(Method method, int index, Class<T> annotationClass) {
 			for (Annotation anno : method.getParameterAnnotations()[index]) {
 				T metaAnnotation = anno.annotationType().getAnnotation(annotationClass);
 				if (metaAnnotation != null) {

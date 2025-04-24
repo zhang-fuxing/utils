@@ -1,5 +1,6 @@
 package com.zhangfuxing.tools.rpc.anno;
 
+import com.zhangfuxing.tools.annotations.AliasFor;
 import com.zhangfuxing.tools.rpc.Method;
 
 import java.lang.annotation.*;
@@ -16,7 +17,11 @@ import static com.zhangfuxing.tools.rpc.Method.GET;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface RpcMapping {
+    @AliasFor("name")
     String value() default "";
+
+    @AliasFor("value")
+    String name() default "";
 
     Method method() default GET;
 
