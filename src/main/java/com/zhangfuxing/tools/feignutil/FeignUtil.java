@@ -46,7 +46,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
  * @date 2025/4/24
  * @email zhangfuxing1010@163.com
  */
-public class FeignUtil {
+public abstract class FeignUtil {
 	private static final Logger logger = org.slf4j.LoggerFactory.getLogger(FeignUtil.class);
 
 	public static <T> T createClient(Class<T> interfaceClass, String targetURL, feign.Logger.Level level, boolean enableLog, Retryer retryer) {
