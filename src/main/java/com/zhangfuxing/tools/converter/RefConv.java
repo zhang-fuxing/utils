@@ -46,6 +46,14 @@ public class RefConv {
 		return converter.conv(value);
 	}
 
+	public static <T, R> R conv(T value, Class<R> type, Function<T, R> rule) {
+		if (value == null || type == null) {
+			return null;
+		}
+		//noinspection unchecked
+		return conv(value, type, Rule.of((Class<T>) value.getClass(), type, rule));
+	}
+
 	public static <T, R> Converter<T, R> create(@NotNull Class<T> sourceClass, @NotNull Class<R> targetClass, Function<T, R> rule) {
 		Converter<T, R> converter = create(sourceClass, targetClass);
 		converter.rules(Rule.of(sourceClass, targetClass, rule));
@@ -129,9 +137,9 @@ public class RefConv {
 		private Conv<R> simpleConv(T t) {
 			try {
 				R result = targetClass.cast(t);
-				return new Conv<R>(true, result);
+				return new Conv<>(true, result);
 			} catch (Exception e) {
-				return new Conv<R>(false, null);
+				return new Conv<>(false, null);
 			}
 		}
 
@@ -174,6 +182,7 @@ public class RefConv {
 			return new Conv<>(true, result);
 		}
 
+		@SuppressWarnings("unchecked")
 		private Conv<R> mapToObj(T input) {
 			if (!(input instanceof Map)) {
 				return new Conv<>(false, null);
@@ -197,6 +206,7 @@ public class RefConv {
 			return new Conv<>(true, result);
 		}
 
+		@SuppressWarnings("unchecked")
 		private Conv<R> objToMap(T input) {
 			if (input instanceof Map<?, ?>) {
 				return new Conv<>(true, (R) input);
@@ -243,7 +253,7 @@ public class RefConv {
 
 		private Conv<R> primitiveConv(Object t) {
 			if (!isPrimitiveOrWrapper(this.sourceClass)) {
-				return new Conv<R>(false, null);
+				return new Conv<>(false, null);
 			}
 			Map<Class<?>, Function<?, ?>> ruleMap = this.ruleTable.get(this.sourceClass);
 			Function<?, ?> function = ruleMap.get(this.targetClass);
@@ -296,7 +306,7 @@ public class RefConv {
 
 		private @NotNull Map<Class<?>, Function<?, ?>> getNumberRules() {
 			Map<Class<?>, Function<?, ?>> convMap = new ConcurrentHashMap<>();
-			convMap.put(Long.class, Function.identity());
+			convMap.put(Long.class, this::toLong);
 			convMap.put(Integer.class, this::toInt);
 			convMap.put(Double.class, this::toDouble);
 			convMap.put(Float.class, this::toFloat);
