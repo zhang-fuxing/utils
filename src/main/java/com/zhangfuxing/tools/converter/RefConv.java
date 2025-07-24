@@ -60,7 +60,50 @@ public class RefConv {
 		return converter;
 	}
 
-	private static final class RefConvImpl<T, R> implements Converter<T, R> {
+	public static <T, R> List<R> conv(List<T> sources, Class<R> type, Function<T, R> rule) {
+		Class<T> sourceClass = null;
+		if (sources != null && !sources.isEmpty()) {
+			for (T source : sources) {
+				if (source == null) {
+					continue;
+				}
+				//noinspection unchecked
+				sourceClass = (Class<T>) source.getClass();
+			}
+		}
+		return conv(sources, type, Map.of(), Rule.of(sourceClass, type, rule));
+	}
+
+	public static <T, R> List<R> conv(List<T> sources, Class<R> type, Rule<?, ?>... rules) {
+		return conv(sources, type, null, rules);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T, R> List<R> conv(List<T> sources, Class<R> type, Map<String, Function<T, ?>> maps, Rule<?, ?>... rules) {
+		if (sources == null) {
+			return Collections.emptyList();
+		}
+		List<R> result = new ArrayList<>();
+		Converter<T, R> converter = null;
+		for (T item : sources) {
+			if (item == null) {
+				continue;
+			}
+			if (converter == null) {
+				converter = create((Class<T>) item.getClass(), type);
+				converter.rules(rules);
+				if (maps != null && !maps.isEmpty()) {
+					maps.forEach(converter::map);
+				}
+			}
+			R itemResult = converter.conv(item);
+			result.add(itemResult);
+		}
+		return result;
+	}
+
+
+	static final class RefConvImpl<T, R> implements Converter<T, R> {
 
 		private final Class<T> sourceClass;
 		private final Class<R> targetClass;
@@ -354,7 +397,6 @@ public class RefConv {
 			return obj == null ? null : obj.toString();
 		}
 	}
-
 
 	// 将基本类型转换为包装类
 	private static Class<?> toWrapperClass(Class<?> clazz) {
