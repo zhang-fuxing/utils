@@ -11,6 +11,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,16 +63,13 @@ public class DynamicGateway {
 							@Override
 							protected void initChannel(SocketChannel ch) {
 								ChannelPipeline pipeline = ch.pipeline();
-
+								pipeline.addLast(new ChunkedWriteHandler());
 								// HTTP编解码器
 								pipeline.addLast(new HttpServerCodec());
-
 								// 聚合HTTP请求
-								pipeline.addLast(new HttpObjectAggregator(1048576));
-
+								pipeline.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
 								// 自定义网关处理器
 								pipeline.addLast(new GatewayHandler(configManager));
-
 								// 将channel添加到组中，便于统一管理
 								allChannels.add(ch);
 							}

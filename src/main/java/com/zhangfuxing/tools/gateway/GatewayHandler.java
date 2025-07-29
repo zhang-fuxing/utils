@@ -4,13 +4,20 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 /**
@@ -51,6 +58,12 @@ public class GatewayHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 		}
 
 		try {
+			// 静态资源路由
+			if (route.resourceRoute()) {
+				handleResourceRequest(route, ctx, request);
+				return;
+			}
+
 			// 构建转发URL
 			String targetUrl = buildTargetUrl(route, request);
 
@@ -178,7 +191,7 @@ public class GatewayHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 									}
 								});
 					} else {
-						logger.error("Failed to connect to target service: " + host + ":" + port, future.cause());
+						logger.error("Failed to connect to target service: {}:{}", host, port, future.cause());
 						sendError(ctx, HttpResponseStatus.BAD_GATEWAY, "Cannot connect to target service");
 					}
 				});
@@ -242,5 +255,108 @@ public class GatewayHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 		logger.error("Gateway error", cause);
 		sendError(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, "Gateway internal error");
 		closeOnFlush(ctx.channel());
+	}
+
+	private void handleResourceRequest(RouteConfig route, ChannelHandlerContext ctx, FullHttpRequest request) {
+		String baseDir = route.getRoot();
+		String index = route.getIndex();
+
+		String uri = URI.create(request.uri()).getPath();
+		if ("/".equals(uri) || uri.isBlank()) {
+			uri = index;
+		}
+		String filepath = pathJoin(baseDir, uri);
+		Path resourcePath = Paths.get(filepath);
+
+		// 检查文件是否存在
+		if (!Files.exists(resourcePath) || !Files.isRegularFile(resourcePath)) {
+			sendError(ctx, HttpResponseStatus.NOT_FOUND, "resource not found: " + filepath);
+			return;
+		}
+
+		try {
+			RandomAccessFile raf = new RandomAccessFile(resourcePath.toFile(), "r");
+			long fileLength = Files.size(resourcePath);
+
+			// HEAD 请求只发送头部
+			if (request.method() == HttpMethod.HEAD) {
+				FullHttpResponse response = new DefaultFullHttpResponse(
+						HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+				response.headers().set(HttpHeaderNames.CONTENT_LENGTH, fileLength);
+				response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+				ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+				return;
+			}
+
+			if (!ctx.channel().isActive()) {
+				logger.warn("Channel is not active, aborting file transfer: {}", filepath);
+				return;
+			}
+			HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+			HttpUtil.setContentLength(response, fileLength);
+			response.headers().set(HttpHeaderNames.CONTENT_TYPE, getContentType(filepath));
+
+			if (ctx.pipeline().get(SslHandler.class) != null) {
+				ctx.write(response);
+			} else {
+				ctx.write(response, ctx.voidPromise());
+			}
+			ChunkedFile chunkedFile = new ChunkedFile(raf, 8192);
+			ctx.writeAndFlush(chunkedFile)
+					.addListener(future -> raf.close())
+					.addListener(ChannelFutureListener.CLOSE);
+
+
+		} catch (IOException e) {
+			logger.error("Error serving resource: {}", filepath, e);
+			sendError(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, "Internal server error");
+		}
+	}
+
+
+	/**
+	 * 根据文件扩展名获取内容类型
+	 */
+	private String getContentType(String filePath) {
+		if (filePath.endsWith(".html")) {
+			return "text/html; charset=UTF-8";
+		} else if (filePath.endsWith(".css")) {
+			return "text/css; charset=UTF-8";
+		} else if (filePath.endsWith(".js")) {
+			return "application/javascript; charset=UTF-8";
+		} else if (filePath.endsWith(".json")) {
+			return "application/json; charset=UTF-8";
+		} else if (filePath.endsWith(".png")) {
+			return "image/png";
+		} else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
+			return "image/jpeg";
+		} else if (filePath.endsWith(".gif")) {
+			return "image/gif";
+		} else if (filePath.endsWith(".svg")) {
+			return "image/svg+xml";
+		} else if (filePath.endsWith(".ico")) {
+			return "image/x-icon";
+		} else {
+			return "application/octet-stream";
+		}
+	}
+
+	private String pathJoin(String... paths) {
+		var result = new StringBuilder();
+		for (int i = 0; i < paths.length; i++) {
+			String path = paths[i].replace("\\", "/");
+			if (path.endsWith("/")) {
+				path = path.substring(0, path.length() - 1);
+			}
+			if (path.startsWith("/")) {
+				path = path.substring(1);
+			}
+			if (i == 0) {
+				result.append(path);
+				continue;
+			}
+			result.append("/").append(path);
+		}
+		return result.toString();
 	}
 }

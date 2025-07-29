@@ -15,10 +15,30 @@ import java.util.regex.Pattern;
  * @email zhangfuxing1010@163.com
  */
 public class RouteConfig {
+	/**
+	 * 路由ID
+	 */
 	private String id;
+	/**
+	 * 匹配路径
+	 */
 	private String source;
+	/**
+	 * 代理目标路径
+	 */
 	private String target;
+	/**
+	 * 路由匹配排序
+	 */
 	private int order = Integer.MAX_VALUE;
+	/**
+	 * WEB应用根路径
+	 */
+	private String root;
+	/**
+	 * WEB应用首页
+	 */
+	private String index = "index.html";
 	private Map<String, String> predicates = new HashMap<>();
 	private Map<String, String> filters = new HashMap<>();
 	private Map<String, String> metadata = new HashMap<>();
@@ -36,7 +56,14 @@ public class RouteConfig {
 		return matcher.find();
 	}
 
-
+	/**
+	 * 是否是静态资源代理路由
+	 *
+	 * @return true:是静态资源代理路由 false: API路由
+	 */
+	public boolean resourceRoute() {
+		return !(root == null || root.isBlank() || index == null || index.isBlank());
+	}
 
 	public String routingUrl(FullHttpRequest request) {
 		String uri = request.uri();
@@ -73,6 +100,24 @@ public class RouteConfig {
 
 	public Map<String, String> getPredicates() {
 		return predicates;
+	}
+
+	public String getRoot() {
+		return root;
+	}
+
+	public RouteConfig setRoot(String root) {
+		this.root = root;
+		return this;
+	}
+
+	public String getIndex() {
+		return index;
+	}
+
+	public RouteConfig setIndex(String index) {
+		this.index = index;
+		return this;
 	}
 
 	public RouteConfig setPredicates(Map<String, String> predicates) {
